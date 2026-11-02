@@ -71,7 +71,7 @@ class JsonAndFallbackTests(unittest.TestCase):
         ]
         scored = [dict(s, score=90 - i) for i, s in enumerate(stories)]
 
-        def fake_write(story):
+        def fake_write(story, recent_angles=None):
             if story["url"] == "u1":
                 raise ValueError("bad json")
             return {"caption": "c", "slides": [{}]}
