@@ -25,6 +25,12 @@ def get_used_img_urls() -> set:
     return set(_load().get("img_urls", []))
 
 
+def get_recent_angles(n: int = 3) -> list[str]:
+    """Hook angles of the last n posts, newest first (used to rotate angles)."""
+    history = _load().get("angle_history", [])
+    return list(reversed(history[-n:]))
+
+
 def get_last_post_time() -> datetime | None:
     """Return UTC datetime of the most recent post, or None if no posts yet."""
     posts = _load().get("posts", [])
@@ -57,6 +63,10 @@ def log_posted(story: dict, ig_post_id: str, carousel: dict, new_img_urls: set |
     for u in (new_img_urls or set()):
         if u not in data["img_urls"]:
             data["img_urls"].append(u)
+
+    angle = str(carousel.get("angle_name") or "").strip().upper()
+    if angle:
+        data.setdefault("angle_history", []).append(angle)
 
     data["posts"].append({
         "url": story["url"],

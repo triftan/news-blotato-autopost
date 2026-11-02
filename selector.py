@@ -121,37 +121,49 @@ Write a 10-slide Instagram carousel for this story.
 
 ## STEP 1: Pick the single best hook angle (these 8 angles)
 
-1. AGAINST THE GRAIN — Contradicts common belief. Use when the story challenges what most people think.
-   Cover: "Why [common belief] Is Dead Wrong" / "Why [popular advice] Is Keeping {COUNTRY} Behind"
-   Example: "Why Saving on AI Tools Is Keeping {COUNTRY} Businesses Poor"
+Each angle has a global example and a {COUNTRY} example. Use the global style for global stories and the {COUNTRY} style only for local ones.
 
-2. CONTROVERSIAL — Polarising, sparks debate. Use when the story has two strong opposing camps.
-   Cover: "Is [X] a Scam?" / "Should People in {COUNTRY} Even Bother With [X]?"
-   Example: "Is {COUNTRY}'s AI Bet a Waste of Money?"
+1. AGAINST THE GRAIN: Contradicts common belief. Use when the story challenges what most people think.
+   Cover: "Why [common belief] Is Dead Wrong" / "Everyone Says [X]. The Numbers Say [Y]."
+   Global: "Everyone Calls It an AI Boom. The Profits Say Otherwise."
+   {COUNTRY}: "Why Saving on AI Tools Is Keeping {COUNTRY} Businesses Poor"
 
-3. TRENDING / TIMELY — Newsjack a current event. Best for breaking announcements.
-   Cover: "What [current event] Reveals About [deeper truth for {COUNTRY}]"
-   Example: "What a New Model Launch Reveals About {COUNTRY}'s AI Gap"
+2. CONTROVERSIAL: Polarising, sparks debate. Use when the story has two strong opposing camps.
+   Cover: "Is [X] a Scam?" / "Should Anyone Trust [X]?"
+   Global: "Is OpenAI's New Model Worth $200 a Month, or Is It a Rip-Off?"
+   {COUNTRY}: "Is {COUNTRY}'s AI Bet a Waste of Money?"
 
-4. CELEBRITY / AUTHORITY — Borrow a known name. Best when a public figure is involved.
-   Cover: "What [public figure]'s [action] Teaches Everyone in {COUNTRY} About [topic]"
-   Example: "What This Leader Understands About AI That Most CEOs Don't"
+3. TRENDING / TIMELY: Newsjack a current event. Best for breaking announcements.
+   Cover: "What [current event] Reveals About [deeper truth]"
+   Global: "Google Just Dropped Its Biggest AI Update. Here's What It Means for Your Job."
+   {COUNTRY}: "What a New Model Launch Reveals About {COUNTRY}'s AI Gap"
 
-5. SMALL CHANGE, BIG DIFFERENCE — High result, low effort. Best for tool/productivity stories.
-   Cover: "One [tool/habit/move] That Changed How People in {COUNTRY} Are Using AI"
-   Example: "This One Prompt Saved {COUNTRY} Founders 3 Hours a Day"
+4. CELEBRITY / AUTHORITY: Borrow a known name. Best when a public figure is involved.
+   Cover: "What [public figure]'s [action] Tells You About [topic]"
+   Global: "Elon Musk Just Admitted His AI Was Too Expensive to Run"
+   {COUNTRY}: "What PM Wong's Warning Means for Every Fresh Grad in {COUNTRY}"
 
-6. WELL KNOWN, LITTLE UNDERSTOOD — Surface knowledge vs mastery. Best for complex topics.
-   Cover: "Everyone Knows [X]. Few People in {COUNTRY} Understand What It Actually Means."
-   Example: "Everyone Knows {COUNTRY} Is Building Data Centres. Few Understand Why That's Dangerous."
+5. SMALL CHANGE, BIG DIFFERENCE: High result, low effort. Best for tool, productivity, and hack stories.
+   Cover: "One [tool/habit/move] That [big result]"
+   Global: "This One Setting Stops ChatGPT From Training on Your Chats"
+   {COUNTRY}: "This One Prompt Saved {COUNTRY} Founders 3 Hours a Day"
 
-7. UNCOMMON / WEIRD — Novelty and surprise. Best when the story has a counterintuitive angle.
+6. WELL KNOWN, LITTLE UNDERSTOOD: Surface knowledge vs the real story. Best for complex topics.
+   Cover: "Everyone Knows [X]. Few Understand What It Actually Means."
+   Global: "Everyone Knows AI Uses Power. Few Know It Now Rivals Whole Countries."
+   {COUNTRY}: "Everyone Knows {COUNTRY} Is Building Data Centres. Few Understand Why That's Risky."
+
+7. UNCOMMON / WEIRD: Novelty and surprise. Best when the story has a strange or counterintuitive twist.
    Cover: "The Weird Way [entity] Is Using AI Nobody Talks About"
-   Example: "3 Weird AI Tools {COUNTRY} SMEs Are Using to Beat MNCs"
+   Global: "AI Robots Started Working Even When Told to Do Nothing"
+   {COUNTRY}: "3 Weird AI Tools {COUNTRY} SMEs Are Using to Beat MNCs"
 
-8. NUMBERS — Specificity = credibility. Best when the story has strong data.
-   Cover: "[X]% of People in {COUNTRY} [surprising fact]" / "[Number] Things About [topic] That Will Shock You"
-   Example: "73% of Companies in {COUNTRY} Are Using AI Wrong. Here's the Data."
+8. NUMBERS: Specificity equals credibility. Best when the story has strong data.
+   Cover: "[X]% of [group] [surprising fact]" / "[Number] Things About [topic] That Will Shock You"
+   Global: "A 12-Person Hacker Team Just Stole $6.3 Billion"
+   {COUNTRY}: "73% of Companies in {COUNTRY} Are Using AI Wrong. Here's the Data."
+
+ROTATE ANGLES. Recently used angles, newest first: {{recent_angles}}. Do not reuse the most recent one, and prefer an angle not in that list, unless no other angle honestly fits this story. Whatever angle you pick, give it a controversial edge (see the hook rules below); controversy is a tone, not only angle 2.
 
 ## STEP 2: Write the full carousel
 
@@ -377,13 +389,14 @@ def ensure_caption_cta(caption: str, local: bool = False) -> str:
     return f"{body}\n\n{hashtags}".strip()
 
 
-def write_carousel(story: dict) -> dict:
+def write_carousel(story: dict, recent_angles: list[str] | None = None) -> dict:
     """Write full 10-slide carousel content for a story."""
     prompt = (WRITE_PROMPT
         .replace("{headline}", story["headline"])
         .replace("{summary}", story.get("summary", ""))
         .replace("{raw_text}", story.get("raw_text", "")[:2000])
         .replace("{category}", story.get("category", "global_ai"))
+        .replace("{recent_angles}", ", ".join(recent_angles or []) or "none yet")
     )
 
     last_error = None
@@ -460,11 +473,15 @@ def run(stories: list[dict], posted_urls: set, force_local: bool = False) -> tup
     pick_urls = {s["url"] for s in picks}
     fallback_pool = [s for s in scored if s["url"] not in pick_urls]
 
+    import logger
+    recent_angles = logger.get_recent_angles(3)
+    print(f"[selector] Recent hook angles (newest first): {recent_angles or 'none'}")
+
     results = []
     for story in picks:
         print(f"[selector] Writing carousel for: {story['headline'][:60]}... (score: {story.get('score')})")
         try:
-            carousel = write_carousel(story)
+            carousel = write_carousel(story, recent_angles)
             results.append((story, carousel))
         except Exception as e:
             print(f"[selector] write_carousel failed: {e}")
@@ -478,7 +495,7 @@ def run(stories: list[dict], posted_urls: set, force_local: bool = False) -> tup
                     continue
                 print(f"[selector] Fallback: {fallback['headline'][:60]}...")
                 try:
-                    carousel = write_carousel(fallback)
+                    carousel = write_carousel(fallback, recent_angles)
                     results.append((fallback, carousel))
                     fallback_pool.remove(fallback)
                     break

@@ -141,7 +141,7 @@ def run(dry_run: bool = False, force_local: bool = False, buffer_draft: bool = F
         story = scraper.story_from_url(story_url)
         if not story.get("raw_text"):
             raise RuntimeError(f"Could not read article text from {story_url}")
-        pairs = [(story, selector.write_carousel(story))]
+        pairs = [(story, selector.write_carousel(story, logger.get_recent_angles(3)))]
         stories = []
     else:
         print("\n── STEP 1: SCRAPE ──")
