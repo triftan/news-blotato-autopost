@@ -71,7 +71,7 @@ class JsonAndFallbackTests(unittest.TestCase):
         ]
         scored = [dict(s, score=90 - i) for i, s in enumerate(stories)]
 
-        def fake_write(story):
+        def fake_write(story, recent_angles=None):
             if story["url"] == "u1":
                 raise ValueError("bad json")
             return {"caption": "c", "slides": [{}]}
@@ -103,6 +103,15 @@ class JsonAndFallbackTests(unittest.TestCase):
              patch.object(selector, "write_carousel", return_value={"caption": "c", "slides": [{}]}):
             results = selector.run(stories, set())
         self.assertEqual(results[0][0]["url"], "s")
+
+
+    def test_write_carousel_tells_writer_recent_angles(self):
+        from unittest.mock import patch
+        good = '{"caption": "Hook", "slides": [{"num": 2, "headline": "H"}]}'
+        with patch.object(selector, "_chat", return_value=good) as chat:
+            selector.write_carousel({"headline": "x", "category": "global_ai"}, ["NUMBERS", "CONTROVERSIAL"])
+        prompt = chat.call_args.args[1]
+        self.assertIn("newest first: NUMBERS, CONTROVERSIAL", prompt)
 
 
 if __name__ == "__main__":
