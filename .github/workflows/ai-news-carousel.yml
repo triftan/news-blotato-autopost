@@ -8,7 +8,11 @@ on:
   workflow_dispatch:
     inputs:
       dry_run:
-        description: 'Dry run — build slides and save artifacts but skip Instagram post'
+        description: 'Dry run: build slides and save artifacts but skip Instagram post'
+        type: boolean
+        default: false
+      local_story:
+        description: 'Lead with a local (Singapore) story instead of the usual 80/20 mix'
         type: boolean
         default: false
 
@@ -49,7 +53,7 @@ jobs:
 
       - name: Run pipeline
         if: ${{ steps.guard.outcome == 'success' && steps.guard.outputs.skip != 'true' }}
-        run: python pipeline.py ${{ github.event.inputs.dry_run == 'true' && '--dry-run' || '' }}
+        run: python pipeline.py ${{ github.event.inputs.dry_run == 'true' && '--dry-run' || '' }} ${{ github.event.inputs.local_story == 'true' && '--local' || '' }}
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}

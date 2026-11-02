@@ -365,7 +365,7 @@ def write_carousel(story: dict) -> dict:
     return carousel
 
 
-def run(stories: list[dict], posted_urls: set) -> tuple[dict, dict]:
+def run(stories: list[dict], posted_urls: set, force_local: bool = False) -> tuple[dict, dict]:
     """Select top stories and write carousels. Retries next story if write fails."""
     # Filter already posted
     fresh = [s for s in stories if s["url"] not in posted_urls]
@@ -389,7 +389,9 @@ def run(stories: list[dict], posted_urls: set) -> tuple[dict, dict]:
     local = next((s for s in scored if s.get("category") == "local"), None)
     global_ = next((s for s in scored if s.get("category") != "local"), None)
 
-    lead_local = random.random() < LOCAL_SHARE
+    lead_local = force_local or random.random() < LOCAL_SHARE
+    if force_local and not local:
+        print("[selector] Local story requested, but no local story was found today; using global.")
     ordered = [local, global_] if lead_local else [global_, local]
     print(f"[selector] Today's lead: {'local' if lead_local else 'global'} (local_share={LOCAL_SHARE})")
     picks = [s for s in ordered if s][:2]

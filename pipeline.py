@@ -89,7 +89,7 @@ def write_review_manifest(
     return str(path)
 
 
-def run(dry_run: bool = False):
+def run(dry_run: bool = False, force_local: bool = False):
     with open("config.json", encoding="utf-8") as config_file:
         cfg = json.load(config_file)
     account_id = cfg["buffer"]["channel_id"]
@@ -127,7 +127,7 @@ def run(dry_run: bool = False):
         sys.exit(0)
 
     print("\n── STEP 3: SELECT + WRITE ──")
-    pairs = selector.run(stories, posted_urls)
+    pairs = selector.run(stories, posted_urls, force_local=force_local)
     if not pairs:
         print("[pipeline] No fresh stories to post — exiting.")
         sys.exit(0)
@@ -179,5 +179,6 @@ def run(dry_run: bool = False):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--dry-run", action="store_true", help="Build but don't post")
+    parser.add_argument("--local", action="store_true", help="Lead with a local (e.g. Singapore) story")
     args = parser.parse_args()
-    run(dry_run=args.dry_run)
+    run(dry_run=args.dry_run, force_local=args.local)
