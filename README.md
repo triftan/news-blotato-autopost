@@ -59,7 +59,7 @@ Open `config.json` and replace every value that contains `YOUR_`:
 - `account_handle`, `community_name`, `community_url`, and `comment_keyword` — how the slides and caption name you, and the word people comment to join.
 - `posting.hashtags` — up to five hashtags. The poster keeps only the first five.
 - `google_news_queries` and `subreddits` — what the bot searches. The file ships with 16 global queries (AI news, viral, hacks, discoveries, controversy) and 4 Singapore queries.
-- `local_share` — how often the post leads with a local story. `0.2` means about 20% Singapore and 80% global.
+- `min_local_score` — the quality gate for local stories. A Singapore story only leads when it scores at least this (0-100, default 75). Otherwise the best global story posts.
 - `country`, `local_keywords`, `government_bodies`, `local_landmarks` — the local market. Change these together if you cover somewhere else.
 
 Replace `logo.png` with a square image of your own logo. A simple PNG or the existing filename is enough. The circle that says LOGO is only a placeholder.

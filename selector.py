@@ -1,7 +1,6 @@
 """Use an LLM via OpenRouter to score stories and write 10-slide carousel content."""
 import os
 import json
-import random
 import re
 from pathlib import Path
 import requests
@@ -26,7 +25,7 @@ LOCAL_CONTEXT  = _CFG.get("local_context", "local founders and businesses")
 FLAG_EMOJI     = _CFG.get("flag_emoji", "🇲🇾")
 HASHTAGS       = " ".join(_CFG.get("posting", {}).get("hashtags", ["#AINews"]))
 LOCAL_HASHTAGS = " ".join(_CFG.get("posting", {}).get("local_hashtags", []))
-LOCAL_SHARE    = float(_CFG.get("local_share", 0.2))
+MIN_LOCAL_SCORE = int(_CFG.get("min_local_score", 75))
 SCORE_MODEL    = _CFG.get("openrouter", {}).get("score_model", "deepseek/deepseek-v4.1-flash")
 WRITE_MODEL    = _CFG.get("openrouter", {}).get("write_model", "deepseek/deepseek-v4.1-flash")
 
@@ -438,16 +437,20 @@ def run(stories: list[dict], posted_urls: set, force_local: bool = False) -> tup
 
     scored = score_stories(fresh)
 
-    # Pick the best local and best global story, then order them so roughly
-    # LOCAL_SHARE of posts lead with the local story (default 20% local, 80% global).
+    # Quality gate: a local story leads only when it is strong enough
+    # (score >= MIN_LOCAL_SCORE). Otherwise the best global story leads.
     local = next((s for s in scored if s.get("category") == "local"), None)
     global_ = next((s for s in scored if s.get("category") != "local"), None)
 
-    lead_local = force_local or random.random() < LOCAL_SHARE
+    local_score = local.get("score", 0) if local else None
+    lead_local = bool(local) and (force_local or local_score >= MIN_LOCAL_SCORE)
     if force_local and not local:
         print("[selector] Local story requested, but no local story was found today; using global.")
     ordered = [local, global_] if lead_local else [global_, local]
-    print(f"[selector] Today's lead: {'local' if lead_local else 'global'} (local_share={LOCAL_SHARE})")
+    print(
+        f"[selector] Today's lead: {'local' if lead_local else 'global'} "
+        f"(best local score={local_score}, gate={MIN_LOCAL_SCORE}{', forced' if force_local else ''})"
+    )
     picks = [s for s in ordered if s][:2]
     if not picks:
         picks = scored[:2]

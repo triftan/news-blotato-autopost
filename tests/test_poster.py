@@ -102,6 +102,14 @@ class PosterTests(unittest.TestCase):
                                           {"image": {"url": "https://img/2.jpg"}}])
         self.assertEqual(data["metadata"]["instagram"], {"type": "post", "shouldShareToFeed": True})
 
+    def test_post_carousel_draft_mode_saves_draft(self):
+        response = _gql({"createPost": {"post": {"id": "p1", "status": "draft"}}})
+        with patch.object(self.poster.requests, "post", return_value=response) as post:
+            self.poster.post_carousel(CHANNEL, "Caption", ["https://img/1.jpg"], draft=True)
+        data = post.call_args.kwargs["json"]["variables"]["input"]
+        self.assertTrue(data["saveToDraft"])
+        self.assertEqual(data["mode"], "addToQueue")
+
     def test_post_carousel_raises_on_mutation_error(self):
         response = _gql({"createPost": {"message": "Invalid image"}})
         with patch.object(self.poster.requests, "post", return_value=response):

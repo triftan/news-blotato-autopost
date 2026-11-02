@@ -227,8 +227,8 @@ mutation CreatePost($input: CreatePostInput!) {
 """
 
 
-def post_carousel(channel_id: str, caption: str, media_urls: list[str]) -> str:
-    """Ask Buffer to publish the carousel now and return the Buffer post id."""
+def post_carousel(channel_id: str, caption: str, media_urls: list[str], draft: bool = False) -> str:
+    """Ask Buffer to publish the carousel now (or save it as a draft) and return its id."""
     variables = {
         "input": {
             "channelId": channel_id,
@@ -237,6 +237,7 @@ def post_carousel(channel_id: str, caption: str, media_urls: list[str]) -> str:
             "mode": "shareNow",
             "needsApproval": False,
             "assets": [{"image": {"url": url}} for url in media_urls],
+            **({"saveToDraft": True, "mode": "addToQueue"} if draft else {}),
             "metadata": {"instagram": {"type": "post", "shouldShareToFeed": True}},
         }
     }
@@ -281,12 +282,19 @@ def wait_for_publication(post_id: str, timeout: int = 240, poll_interval: int = 
         time.sleep(poll_interval)
 
 
-def run(image_paths: list[str], caption: str, channel_id: str, folder: str) -> str:
-    """Host all slides, submit the carousel, and return the Buffer post id."""
+def run(image_paths: list[str], caption: str, channel_id: str, folder: str,
+        draft: bool = False) -> str:
+    """Host all slides, submit the carousel, and return the Buffer post id.
+
+    With draft=True the carousel is saved as a Buffer draft and nothing is published.
+    """
     print(f"[poster] Hosting {len(image_paths)} slides on GitHub ({MEDIA_BRANCH} branch)...")
     public_urls = upload_all_slides(image_paths, folder)
     print(f"[poster] Posting carousel to Buffer channel {channel_id}...")
-    post_id = post_carousel(channel_id, caption, public_urls)
+    post_id = post_carousel(channel_id, caption, public_urls, draft=draft)
+    if draft:
+        print(f"[poster] Saved as a Buffer draft (not published): {post_id}")
+        return post_id
     wait_for_publication(post_id)
     return post_id
 

@@ -89,7 +89,7 @@ def write_review_manifest(
     return str(path)
 
 
-def run(dry_run: bool = False, force_local: bool = False):
+def run(dry_run: bool = False, force_local: bool = False, buffer_draft: bool = False):
     with open("config.json", encoding="utf-8") as config_file:
         cfg = json.load(config_file)
     account_id = cfg["buffer"]["channel_id"]
@@ -122,7 +122,7 @@ def run(dry_run: bool = False, force_local: bool = False):
 
     hours_ago = logger.hours_since_last_post()
     print(f"[pipeline] Local log: last post was {hours_ago:.1f}h ago")
-    if not dry_run and hours_ago < 7:
+    if not dry_run and not buffer_draft and hours_ago < 7:
         print(f"[pipeline] Already posted {hours_ago:.1f}h ago — skipping to avoid double-post.")
         sys.exit(0)
 
@@ -165,7 +165,11 @@ def run(dry_run: bool = False, force_local: bool = False):
 
     print("\n── STEP 6: POST VIA BUFFER ──")
     caption = carousel.get("caption", "")
-    submission_id = poster.run(png_paths, caption, account_id, run_id)
+    submission_id = poster.run(png_paths, caption, account_id, run_id, draft=buffer_draft)
+    if buffer_draft:
+        print(f"\n✓ BUFFER DRAFT SAVED (nothing published): {story['headline'][:60]}")
+        print(f"  Buffer post ID: {submission_id}")
+        return
 
     print("\n── STEP 7: LOG ──")
     story["buffer_channel_id"] = account_id
@@ -180,5 +184,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--dry-run", action="store_true", help="Build but don't post")
     parser.add_argument("--local", action="store_true", help="Lead with a local (e.g. Singapore) story")
+    parser.add_argument("--buffer-draft", action="store_true",
+                        help="Send to Buffer as a draft instead of publishing (end-to-end test)")
     args = parser.parse_args()
-    run(dry_run=args.dry_run, force_local=args.local)
+    run(dry_run=args.dry_run, force_local=args.local, buffer_draft=args.buffer_draft)

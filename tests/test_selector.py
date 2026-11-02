@@ -82,5 +82,28 @@ class JsonAndFallbackTests(unittest.TestCase):
         self.assertEqual(results[0][0]["url"], "u2")
 
 
+    def test_quality_gate_picks_global_when_local_is_weak(self):
+        from unittest.mock import patch
+        stories = [
+            {"headline": "Global", "url": "g", "category": "global_ai", "score": 80},
+            {"headline": "SG weak", "url": "s", "category": "local", "score": selector.MIN_LOCAL_SCORE - 1},
+        ]
+        with patch.object(selector, "score_stories", return_value=stories), \
+             patch.object(selector, "write_carousel", return_value={"caption": "c", "slides": [{}]}):
+            results = selector.run(stories, set())
+        self.assertEqual(results[0][0]["url"], "g")
+
+    def test_quality_gate_lets_strong_local_lead(self):
+        from unittest.mock import patch
+        stories = [
+            {"headline": "Global", "url": "g", "category": "global_ai", "score": 95},
+            {"headline": "SG strong", "url": "s", "category": "local", "score": selector.MIN_LOCAL_SCORE},
+        ]
+        with patch.object(selector, "score_stories", return_value=stories), \
+             patch.object(selector, "write_carousel", return_value={"caption": "c", "slides": [{}]}):
+            results = selector.run(stories, set())
+        self.assertEqual(results[0][0]["url"], "s")
+
+
 if __name__ == "__main__":
     unittest.main()
