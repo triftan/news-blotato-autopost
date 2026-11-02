@@ -1,0 +1,57 @@
+name: Preflight
+
+on:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install requests
+      - name: Verify Blotato account from config.json
+        env:
+          BLOTATO_API_KEY: ${{ secrets.BLOTATO_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          python << 'PY'
+          import os
+          import sys
+
+          import config_check
+          import poster
+
+          cfg = config_check.load_config()
+          fields = config_check.placeholder_fields(cfg)
+          if fields:
+              print(config_check.friendly_message(fields))
+              print("Preflight failed before calling Blotato. Replace the placeholders in config.json, then run this again.")
+              sys.exit(1)
+          if not os.environ.get("ANTHROPIC_API_KEY", "").strip():
+              print("Preflight failed: the ANTHROPIC_API_KEY secret is missing or empty.")
+              print("Add it under Settings > Secrets and variables > Actions.")
+              sys.exit(1)
+          blotato = cfg["blotato"]
+          try:
+              poster.validate_account(
+                  blotato["instagram_account_id"],
+                  blotato["instagram_username"],
+              )
+          except RuntimeError as exc:
+              print(f"Preflight failed: {exc}")
+              text = str(exc)
+              if "not connected" in text or "does not match" in text:
+                  print(
+                      "This usually means blotato.instagram_account_id in config.json "
+                      "is not an Instagram account connected in Blotato. Copy the numeric id "
+                      "from the list above into config.json, and set instagram_username to the same account."
+                  )
+              elif "BLOTATO_API_KEY" in text:
+                  print("Add BLOTATO_API_KEY under Settings > Secrets and variables > Actions.")
+              sys.exit(1)
+          print("Required content AI credential installed.")
+          PY

@@ -1,0 +1,48 @@
+{
+  "_comment": "Replace every YOUR_ value before a live post. country, currency, landmarks, hashtags, and google_news_queries are Malaysia examples — edit them for your audience. The scrapers URLs are examples only; scraper.py does not read that block.",
+  "country": "Malaysia",
+  "account_handle": "@YOUR_INSTAGRAM_HANDLE",
+  "community_name": "YOUR_BRAND_NAME",
+  "community_url": "YOUR_COMMUNITY_URL",
+  "comment_keyword": "YOUR_COMMENT_KEYWORD",
+  "flag_emoji": "🇲🇾",
+  "currency": "Ringgit (RM)",
+  "government_bodies": "NAIO, MDEC, MOSTI",
+  "local_landmarks": "KLCC, Putrajaya, Penang, Johor Bahru",
+  "local_context": "local founders, SMEs, and professionals",
+  "posting": {
+    "slides_count": 10,
+    "max_hashtags": 5,
+    "hashtags": ["#MalaysiaAI", "#AINews", "#ArtificialIntelligence", "#TechNews", "#Malaysia"]
+  },
+  "blotato": {
+    "instagram_account_id": "YOUR_BLOTATO_INSTAGRAM_ACCOUNT_ID",
+    "instagram_username": "YOUR_INSTAGRAM_USERNAME"
+  },
+  "google_news_queries": [
+    "Malaysia+AI+artificial+intelligence",
+    "Malaysia+digital+economy",
+    "MDEC+AI+Malaysia",
+    "Kuala+Lumpur+tech+startup+AI",
+    "Malaysia+data+centre+investment",
+    "artificial+intelligence+Southeast+Asia+Malaysia",
+    "open+source+AI+Malaysia",
+    "ChatGPT+Malaysia+business",
+    "Malaysia+AI+policy+government",
+    "Malaysia+automation+workforce",
+    "generative+AI+Malaysia+enterprise",
+    "Malaysia+fintech+AI+banking",
+    "Malaysian+startup+funding+AI",
+    "AI+tools+Malaysia+SME",
+    "Malaysia+smart+city+AI",
+    "Iskandar+Malaysia+AI+investment",
+    "Malaysia+AI+healthcare",
+    "Malaysia+education+AI+university",
+    "AI+Malaysia+jobs+employment",
+    "NAIO+Malaysia+national+AI+office"
+  ],
+  "scrapers": {
+    "tech_in_asia": "https://www.techinasia.com/feed",
+    "e27": "https://e27.co/feed/"
+  }
+}
