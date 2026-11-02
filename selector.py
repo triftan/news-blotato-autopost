@@ -131,6 +131,12 @@ Writing rules — study these carefully:
 - Write like a smart friend explaining news over WhatsApp. Not a journalist. Not a presenter.
 - Preserve every date, year, reporting period, number, organisation, and attribution exactly as supplied by the source. Never change 1H2026 to 1H2025 or invent a missing fact.
 - Preserve the full scope of compound facts. If the source says "data centres and cloud projects", keep both categories; never narrow it to "just data centres".
+- HOOKS MUST BE CONTROVERSIAL. The cover headline, cover_subheadline, and the first caption line must pick a side or poke at a tension people will argue about in the comments. Use one of these moves:
+  - Name the uncomfortable trade-off: who pays, who loses, who benefits ("Singapore Is Betting Billions on AI. Taxpayers Carry the Risk?").
+  - Us vs them: workers vs bosses, students vs teachers, Big Tech vs everyone, government vs privacy.
+  - Call out the hype or the double standard ("Everyone Calls It an AI Boom. The Numbers Call It Debt.").
+  - Ask the question nobody wants to answer, phrased as a challenge, not a neutral "what this means".
+  Bland, neutral, or press-release hooks are a failure. Every claim must still be supported by the article: be provocative in framing and choice of angle, never in inventing facts. Frame contested points as questions or attribute them ("critics say").
 - Cover headline: Use Title Case (not ALLCAPS). Include a SPECIFIC number or name if the story has one. Max 10 words per line, 2-3 lines. Make someone stop scrolling.
   GOOD: "Someone Built a $32 Device That Shows Your AI Usage in Real Time"
   GOOD: "{COUNTRY} Just Secured a $10 Billion AI Deal Nobody Saw Coming"
@@ -290,6 +296,10 @@ def score_stories(stories: list[dict]) -> list[dict]:
             stories[idx]["score_reason"] = s.get("reason", "")
             stories[idx]["suggested_angle"] = s.get("angle", 3)
 
+    # Thin stories (paywall, no article text) drop down the list.
+    for s in stories:
+        if s.get("thin_text"):
+            s["score"] = s.get("score", 0) - 25
     return sorted(stories, key=lambda x: x.get("score", 0), reverse=True)
 
 
@@ -379,6 +389,17 @@ def run(stories: list[dict], posted_urls: set, force_local: bool = False) -> tup
     ]
     before = len(fresh)
     fresh = [s for s in fresh if not any(kw in s.get("headline", "").lower() for kw in _blocklist)]
+
+    # Skip paywalled sources: the writer would only get a headline and repeat it.
+    paywalled = [d.lower() for d in _CFG.get("paywalled_domains", [])]
+    before_paywall = len(fresh)
+    fresh = [s for s in fresh if not any(d in s.get("url", "").lower() for d in paywalled)]
+    if len(fresh) < before_paywall:
+        print(f"[selector] Skipped {before_paywall - len(fresh)} paywalled stories")
+
+    # Stories with almost no readable text make thin, repetitive carousels.
+    for s in fresh:
+        s["thin_text"] = len(s.get("raw_text", "")) < 600
     if len(fresh) < before:
         print(f"[selector] Blocked {before - len(fresh)} irrelevant stories")
 

@@ -1,5 +1,5 @@
 {
-  "_comment": "Replace every YOUR_ value before a live post. local_share is the fraction of posts about the local country (0.2 = 20% Singapore, 80% global). google_news_queries and subreddits drive what gets found.",
+  "_comment": "Replace every YOUR_ value before a live post. local_share is the fraction of posts about the local country (0.2 = 20% Singapore, 80% global). google_news_queries and subreddits drive what gets found. Stories from paywalled_domains are skipped because the writer only gets a headline.",
   "country": "Singapore",
   "account_handle": "@brandonlee.ai",
   "community_name": "Brandonlee.ai",
@@ -50,8 +50,10 @@
     "new+AI+tool+launch",
     "Singapore+AI",
     "Singapore+deepfake+OR+scam+AI",
-    "IMDA+OR+GovTech+OR+%22Smart+Nation%22+AI",
-    "Singapore+startup+AI+funding"
+    "Singapore+AI+jobs+OR+layoffs+OR+retrenchment",
+    "Singapore+AI+students+OR+schools+OR+cheating",
+    "Singapore+AI+privacy+OR+surveillance+OR+police",
+    "IMDA+OR+GovTech+OR+%22Smart+Nation%22+AI"
   ],
   "local_share": 0.2,
   "local_keywords": [
@@ -83,5 +85,15 @@
     "Futurology",
     "cybersecurity",
     "singapore"
+  ],
+  "paywalled_domains": [
+    "bloomberg.com",
+    "ft.com",
+    "wsj.com",
+    "economist.com",
+    "nytimes.com",
+    "theinformation.com",
+    "barrons.com",
+    "businessinsider.com"
   ]
 }
