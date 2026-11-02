@@ -145,6 +145,10 @@ Writing rules — study these carefully:
 - Caption: Start with a provocative 1-line hook. Then 2-3 short lines expanding it. End with Comment {COMMENT_KEYWORD}. Use only these hashtags: {HASHTAGS}
 - Write EXACTLY 8 slides (num 2 through 9). Do NOT write a slide 10 — the CTA is generated automatically.
 - cover_badge: Pick one — BREAKING (major new announcement), LOCAL (story about {COUNTRY}), AI NEWS (global AI), EXCLUSIVE (insider/first), VIRAL (meme/funny).
+- Photos come from Pixabay stock search, which matches keywords literally. For every slide give:
+  - image_query: 2-4 plain English keywords for a REAL photo that shows the subject of that slide. Concrete nouns only (objects, scenes, people doing things). Examples: "bitcoin coins", "hacker laptop dark", "stock market screen", "robot arm factory", "smartphone app", "server room", "police tape", "courtroom gavel".
+  - Never use brand names, people's names, place names, or abstract words (concept, future, impact, growth, timeline, data visualisation).
+  - image_category: one of science, computer, business, industry, people, transportation, buildings, education, health. Pick the one the photo belongs to.
 - meme_text: Only for funny/ironic/meme stories. Max 2 short lines, written like a screenshot of someone's shocked reaction or a tweet. Empty string for straight news.
 
 Return valid JSON only:
@@ -157,6 +161,8 @@ Return valid JSON only:
   "cover_badge": "BREAKING",
   "meme_text": "Optional. For meme-worthy stories only (AI behaving weirdly, funny reversals, ironic stats): 1-2 lines of witty commentary shown as a chat bubble on the cover. Write it like a tweet reaction. Leave empty string for straight news.",
   "caption": "A $32 gadget is now more useful than most $2,000 AI dashboards.\\n\\nHere's what it does — and why developers in {COUNTRY} are already copying it.\\n\\nSwipe to see the full breakdown ➡️\\n\\nComment \\"{COMMENT_KEYWORD}\\" to join {COMMUNITY_NAME} {FLAG_EMOJI}\\n→ {COMMUNITY_URL}\\n\\n{HASHTAGS}",
+  "cover_image_query": "2-4 literal keywords for the cover photo, e.g. hacker laptop dark",
+  "cover_image_category": "computer",
   "cover_image_prompt": "A dramatic, high-quality photographic portrait. Prefer: a well-known tech CEO or entrepreneur relevant to this story (e.g. Sam Altman, Sundar Pichai, Elon Musk, a relevant local founder), OR a cinematic real-world scene (aerial city night, storm clouds, server room blue glow). Full-bleed portrait orientation. No logos, no flat graphics, no text. Dark and bold.",
   "slides": [
     {{
@@ -164,6 +170,8 @@ Return valid JSON only:
       "label": "WHAT HAPPENED",
       "headline": "Write a specific 8-10 word headline describing the actual news event",
       "insight": "One sentence, max 12 words. The most surprising fact or number from this story.",
+      "image_query": "2-4 literal keywords for this slide's photo",
+      "image_category": "computer",
       "image_prompt": "Dark tech concept relevant to the story, no text, portrait"
     }},
     {{
@@ -171,6 +179,8 @@ Return valid JSON only:
       "label": "WHY IT MATTERS",
       "headline": "Write how this directly affects the reader (use the {COUNTRY} angle only if the story really has one)",
       "insight": "One sentence, max 12 words. Direct impact on people or businesses — with a number if possible.",
+      "image_query": "2-4 literal keywords for this slide's photo",
+      "image_category": "computer",
       "image_prompt": "City skyline at night, dark moody, no text (a {COUNTRY} landmark such as {LANDMARKS} only for local stories)"
     }},
     {{
@@ -178,6 +188,8 @@ Return valid JSON only:
       "label": "THE NUMBER",
       "headline": "Write the specific stat or data point as a surprising statement",
       "insight": "One sentence, max 12 words. The exact figure — e.g. $7.3 billion, 48x faster, 73% of companies.",
+      "image_query": "2-4 literal keywords for this slide's photo",
+      "image_category": "computer",
       "image_prompt": "Abstract data visualisation, dark background, no text"
     }},
     {{
@@ -185,6 +197,8 @@ Return valid JSON only:
       "label": "MOST PEOPLE DON'T KNOW",
       "headline": "Write the counterintuitive truth this story reveals",
       "insight": "One sentence, max 12 words. The thing that surprises even people who follow AI closely.",
+      "image_query": "2-4 literal keywords for this slide's photo",
+      "image_category": "computer",
       "image_prompt": "Contrast concept, light vs dark, modern vs old, no text"
     }},
     {{
@@ -192,6 +206,8 @@ Return valid JSON only:
       "label": "EXPERT TAKE",
       "headline": "Write what a credible person or organisation actually said about this",
       "insight": "One sentence, max 12 words. A direct quote or specific claim from a named expert.",
+      "image_query": "2-4 literal keywords for this slide's photo",
+      "image_category": "computer",
       "image_prompt": "Professional speaker or conference scene, spotlight, dark background, no text"
     }},
     {{
@@ -199,6 +215,8 @@ Return valid JSON only:
       "label": "HOW WE GOT HERE",
       "headline": "Write the key turning point or backstory in one specific statement",
       "insight": "One sentence, max 12 words. The single event or year that made today's news inevitable.",
+      "image_query": "2-4 literal keywords for this slide's photo",
+      "image_category": "computer",
       "image_prompt": "Timeline or milestone concept, dark background, glowing points, no text"
     }},
     {{
@@ -206,6 +224,8 @@ Return valid JSON only:
       "label": "WHAT TO DO NOW",
       "headline": "Write a specific actionable move or hack the reader can use today",
       "insight": "One sentence, max 12 words. The one thing early movers are doing right now.",
+      "image_query": "2-4 literal keywords for this slide's photo",
+      "image_category": "computer",
       "image_prompt": "Person working on laptop at night, city lights, focused, no text"
     }},
     {{
@@ -213,6 +233,8 @@ Return valid JSON only:
       "label": "WATCH OUT FOR",
       "headline": "Write the specific trap, risk, or overhyped claim people are falling for",
       "insight": "One sentence, max 12 words. The exact thing not worth your time or money right now.",
+      "image_query": "2-4 literal keywords for this slide's photo",
+      "image_category": "computer",
       "image_prompt": "Warning or caution concept, dramatic shadows, no text"
     }}
   ]
@@ -269,6 +291,31 @@ def score_stories(stories: list[dict]) -> list[dict]:
     return sorted(stories, key=lambda x: x.get("score", 0), reverse=True)
 
 
+def ensure_caption_cta(caption: str) -> str:
+    """Guarantee the caption ends with the comment keyword, community link, and hashtags."""
+    caption = (caption or "").strip()
+    body_lines, tags = [], []
+    for line in caption.splitlines():
+        stripped = line.strip()
+        if stripped and all(word.startswith("#") for word in stripped.split()):
+            tags.extend(stripped.split())
+        else:
+            body_lines.append(line)
+    body = "\n".join(body_lines).rstrip()
+
+    cta_lines = []
+    if COMMENT_KEYWORD and f'"{COMMENT_KEYWORD}"' not in body and f"Comment {COMMENT_KEYWORD}" not in body:
+        cta_lines.append(f'Comment "{COMMENT_KEYWORD}" to join {COMMUNITY_NAME} {FLAG_EMOJI}'.strip())
+    if COMMUNITY_URL and COMMUNITY_URL not in body:
+        cta_lines.append(f"→ {COMMUNITY_URL}")
+    if cta_lines:
+        joiner = "\n" if len(cta_lines) == 1 and cta_lines[0].startswith("→") else "\n\n"
+        body = body + joiner + "\n".join(cta_lines)
+
+    hashtags = " ".join(dict.fromkeys(tags)) or HASHTAGS
+    return f"{body}\n\n{hashtags}".strip()
+
+
 def write_carousel(story: dict) -> dict:
     """Write full 10-slide carousel content for a story."""
     prompt = (WRITE_PROMPT
@@ -285,7 +332,9 @@ def write_carousel(story: dict) -> dict:
     end = text.rfind("}") + 1
     if start == -1 or end == 0:
         raise ValueError(f"[selector] write_carousel parse failed:\n{text[:300]}")
-    return json.loads(text[start:end])
+    carousel = json.loads(text[start:end])
+    carousel["caption"] = ensure_caption_cta(carousel.get("caption", ""))
+    return carousel
 
 
 def run(stories: list[dict], posted_urls: set) -> tuple[dict, dict]:

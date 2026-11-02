@@ -54,6 +54,7 @@ jobs:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
           PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+          SUPERPOWERS_API_KEY: ${{ secrets.SUPERPOWERS_API_KEY }}  # Reddit via superpowers.social (optional)
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # hosts slides on the media branch for Buffer
 
       - name: Commit posted_urls.json

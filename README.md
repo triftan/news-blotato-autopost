@@ -48,6 +48,7 @@ In your new repository open **Settings → Secrets and variables → Actions →
 - `OPENROUTER_API_KEY`
 - `BUFFER_API_KEY`
 - `PIXABAY_API_KEY`
+- `SUPERPOWERS_API_KEY` (optional) — from [superpowers.social/account](https://superpowers.social/account). Reddit blocks GitHub's servers, so Reddit posts are fetched through Social Superpowers. Without this key the bot skips Reddit.
 
 ### 4. Edit `config.json` and replace the logo
 

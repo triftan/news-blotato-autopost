@@ -28,5 +28,24 @@ class ImageGenerationFallbackTests(unittest.TestCase):
         self.assertEqual(sources, ["gradient"] * 10)
         self.assertEqual(gradient.call_count, 10)
 
+    def test_uses_writer_image_query_and_category(self):
+        carousel = {
+            "cover_image_query": "hacker laptop dark",
+            "cover_image_category": "computer",
+            "slides": [{"image_query": "bitcoin coins", "image_category": "business"}],
+        }
+        with tempfile.TemporaryDirectory() as output_dir:
+            with (
+                patch.object(self.image_gen, "_fetch_pixabay", return_value=(None, "")) as fetch,
+                patch.object(self.image_gen, "_gradient_fallback"),
+            ):
+                self.image_gen.generate_slide_images(carousel, output_dir)
+        first, second = fetch.call_args_list[0], fetch.call_args_list[1]
+        self.assertEqual(first.args[0], "hacker laptop dark")
+        self.assertEqual(first.kwargs["category"], "computer")
+        self.assertEqual(second.args[0], "bitcoin coins")
+        self.assertEqual(second.kwargs["category"], "business")
+
+
 if __name__ == "__main__":
     unittest.main()
