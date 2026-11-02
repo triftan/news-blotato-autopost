@@ -46,5 +46,41 @@ class DashRemovalTests(unittest.TestCase):
         self.assertEqual(cleaned["slides"][0]["headline"], "C, D")
 
 
+
+class JsonAndFallbackTests(unittest.TestCase):
+    def test_parse_json_repairs_missing_comma(self):
+        data = selector._parse_json('```json\n{"a": "x" "slides": [1, 2,]}\n```', "{")
+        self.assertEqual(data["slides"], [1, 2])
+
+    def test_write_carousel_retries_after_bad_json(self):
+        from unittest.mock import patch
+        good = '{"caption": "Hook", "slides": [{"num": 2, "headline": "H"}]}'
+        with patch.object(selector, "_chat", side_effect=["not json at all", good]) as chat:
+            carousel = selector.write_carousel({"headline": "x", "category": "global_ai"})
+        self.assertEqual(chat.call_count, 2)
+        self.assertTrue(chat.call_args_list[0].kwargs["json_mode"])
+        self.assertFalse(chat.call_args_list[1].kwargs["json_mode"])
+        self.assertEqual(carousel["slides"][0]["headline"], "H")
+
+    def test_local_lead_falls_back_to_another_local_story(self):
+        from unittest.mock import patch
+        stories = [
+            {"headline": "SG one", "url": "u1", "category": "local", "raw_text": "x" * 700},
+            {"headline": "SG two", "url": "u2", "category": "local", "raw_text": "x" * 700},
+            {"headline": "Global", "url": "u3", "category": "global_ai", "raw_text": "x" * 700},
+        ]
+        scored = [dict(s, score=90 - i) for i, s in enumerate(stories)]
+
+        def fake_write(story):
+            if story["url"] == "u1":
+                raise ValueError("bad json")
+            return {"caption": "c", "slides": [{}]}
+
+        with patch.object(selector, "score_stories", return_value=scored), \
+             patch.object(selector, "write_carousel", side_effect=fake_write):
+            results = selector.run(stories, set(), force_local=True)
+        self.assertEqual(results[0][0]["url"], "u2")
+
+
 if __name__ == "__main__":
     unittest.main()

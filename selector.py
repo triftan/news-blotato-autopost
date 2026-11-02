@@ -5,6 +5,7 @@ import random
 import re
 from pathlib import Path
 import requests
+from json_repair import repair_json
 
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 
@@ -30,7 +31,7 @@ SCORE_MODEL    = _CFG.get("openrouter", {}).get("score_model", "deepseek/deepsee
 WRITE_MODEL    = _CFG.get("openrouter", {}).get("write_model", "deepseek/deepseek-v4.1-flash")
 
 
-def _chat(model: str, prompt: str, max_tokens: int) -> str:
+def _chat(model: str, prompt: str, max_tokens: int, json_mode: bool = False) -> str:
     """Send one prompt to OpenRouter and return the reply text."""
     api_key = os.environ.get("OPENROUTER_API_KEY", "").strip()
     if not api_key:
@@ -46,6 +47,10 @@ def _chat(model: str, prompt: str, max_tokens: int) -> str:
             "model": model,
             "max_tokens": max_tokens,
             "messages": [{"role": "user", "content": prompt}],
+            # Keep hidden reasoning short so it cannot eat the whole token budget
+            # and leave the visible answer empty.
+            "reasoning": {"effort": "low", "exclude": True},
+            **({"response_format": {"type": "json_object"}} if json_mode else {}),
         },
         timeout=180,
     )
@@ -54,7 +59,31 @@ def _chat(model: str, prompt: str, max_tokens: int) -> str:
     body = resp.json()
     if body.get("error"):
         raise RuntimeError(f"OpenRouter {model} error: {body['error']}")
-    return (body["choices"][0]["message"].get("content") or "").strip()
+    choice = body["choices"][0]
+    content = (choice["message"].get("content") or "").strip()
+    if not content:
+        raise RuntimeError(
+            f"OpenRouter {model} returned an empty answer (finish_reason={choice.get('finish_reason')})"
+        )
+    return content
+
+
+def _parse_json(text: str, opener: str):
+    """Parse model JSON, repairing small syntax slips (missing commas, trailing commas)."""
+    text = re.sub(r"```(?:json)?\s*", "", text).strip()
+    closer = "}" if opener == "{" else "]"
+    start, end = text.find(opener), text.rfind(closer) + 1
+    if start == -1 or end == 0:
+        raise ValueError(f"no JSON found in model answer: {text[:200]}")
+    chunk = text[start:end]
+    try:
+        return json.loads(chunk)
+    except ValueError:
+        repaired = repair_json(chunk, return_objects=True)
+        if not repaired:
+            raise ValueError(f"could not repair model JSON: {chunk[:200]}")
+        print("[selector] Repaired malformed JSON from the model")
+        return repaired
 
 SCORE_PROMPT = f"""You are a viral social media editor for {ACCOUNT_HANDLE}, a global AI news page on Instagram run from {COUNTRY}.
 
@@ -275,20 +304,15 @@ def score_stories(stories: list[dict]) -> list[dict]:
         for i, s in enumerate(stories)
     )
 
-    text = _chat(SCORE_MODEL, SCORE_PROMPT.replace("{stories}", stories_text), 8000)
-    # Strip markdown code fences if present
-    text = re.sub(r"```(?:json)?\s*", "", text).strip()
-    # Extract JSON array
-    start = text.find("[")
-    end = text.rfind("]") + 1
-    if start == -1 or end == 0:
-        print(f"[selector] Score parse failed — raw response:\n{text[:300]}")
-        # Return stories with default score 50
+    try:
+        text = _chat(SCORE_MODEL, SCORE_PROMPT.replace("{stories}", stories_text), 8000)
+        scores = _parse_json(text, "[")
+    except Exception as e:
+        print(f"[selector] Score step failed ({e}); using default scores")
         for s in stories:
             s.setdefault("score", 50)
             s.setdefault("suggested_angle", 3)
         return stories
-    scores = json.loads(text[start:end])
 
     for s in scores:
         idx = s["index"]
@@ -362,14 +386,22 @@ def write_carousel(story: dict) -> dict:
         .replace("{category}", story.get("category", "global_ai"))
     )
 
-    text = _chat(WRITE_MODEL, prompt, 4000)
-    # Strip markdown code fences
-    text = re.sub(r"```(?:json)?\s*", "", text).strip()
-    start = text.find("{")
-    end = text.rfind("}") + 1
-    if start == -1 or end == 0:
-        raise ValueError(f"[selector] write_carousel parse failed:\n{text[:300]}")
-    carousel = _strip_dashes(json.loads(text[start:end]))
+    last_error = None
+    for attempt in range(1, 3):
+        try:
+            # JSON mode on the first try; plain mode on the retry in case the
+            # provider rejects response_format.
+            text = _chat(WRITE_MODEL, prompt, 12000, json_mode=(attempt == 1))
+            data = _parse_json(text, "{")
+            if not isinstance(data, dict) or not data.get("slides"):
+                raise ValueError("model JSON has no slides")
+            break
+        except Exception as e:
+            last_error = e
+            print(f"[selector] Writer attempt {attempt} failed: {e}")
+    else:
+        raise ValueError(f"[selector] write_carousel failed after 2 attempts: {last_error}")
+    carousel = _strip_dashes(data)
     carousel["caption"] = ensure_caption_cta(
         carousel.get("caption", ""), local=story.get("category") == "local"
     )
@@ -433,8 +465,11 @@ def run(stories: list[dict], posted_urls: set, force_local: bool = False) -> tup
         except Exception as e:
             print(f"[selector] write_carousel failed: {e}")
             print(f"[selector] Trying next story from fallback pool...")
-            # Try fallback stories one by one until one succeeds
-            for fallback in fallback_pool:
+            # Try fallback stories one by one until one succeeds, same category
+            # first so a local lead stays local.
+            same = [f for f in fallback_pool if (f.get("category") == "local") == (story.get("category") == "local")]
+            other = [f for f in fallback_pool if f not in same]
+            for fallback in same + other:
                 if fallback["url"] in {r[0]["url"] for r in results}:
                     continue
                 print(f"[selector] Fallback: {fallback['headline'][:60]}...")
