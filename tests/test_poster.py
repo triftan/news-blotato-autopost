@@ -56,10 +56,10 @@ class PosterTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "disconnected"):
                 self.poster.validate_account(CHANNEL)
 
-    def test_validate_account_rejects_username_mismatch(self):
-        with patch.object(self.poster.requests, "post", return_value=self._channel(name="someoneelse")):
-            with self.assertRaisesRegex(RuntimeError, "does not match"):
-                self.poster.validate_account(CHANNEL, "examplecreator")
+    def test_validate_account_only_warns_on_stale_username(self):
+        with patch.object(self.poster.requests, "post", return_value=self._channel(name="oldname")):
+            channel = self.poster.validate_account(CHANNEL, "examplecreator")
+        self.assertEqual(channel["id"], CHANNEL)
 
     def test_graphql_errors_are_raised(self):
         response = Mock(status_code=200)

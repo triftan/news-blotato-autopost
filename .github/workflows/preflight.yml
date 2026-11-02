@@ -74,7 +74,7 @@ jobs:
               else:
                   print(
                       "Check buffer.channel_id in config.json is the id of an Instagram channel "
-                      "in the same Buffer account as BUFFER_API_KEY, and that instagram_username matches it."
+                      "in the same Buffer account as BUFFER_API_KEY."
                   )
               sys.exit(1)
           print("All checks passed.")

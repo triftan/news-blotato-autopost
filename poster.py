@@ -97,9 +97,12 @@ def validate_account(channel_id: str, expected_username: Optional[str] = None) -
         actual = str(channel.get("name", "")).lstrip("@").lower()
         expected = expected_username.lstrip("@").lower()
         if actual != expected:
-            raise RuntimeError(
-                f"Buffer channel {channel_id} (@{actual or 'unknown'}) does not match "
-                f"expected Instagram account @{expected}"
+            # Buffer keeps the old name after an Instagram rename, so the channel id
+            # is what counts. Warn instead of blocking the post.
+            print(
+                f"[poster] Note: Buffer shows this channel as @{actual or 'unknown'}, "
+                f"config.json says @{expected}. Posting to channel {channel_id} anyway. "
+                "Reconnect the channel in Buffer to refresh the name."
             )
     print(f"[poster] Buffer ready: Instagram @{channel.get('name')} (channel {channel_id})")
     return channel
