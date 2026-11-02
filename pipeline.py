@@ -6,7 +6,8 @@ import argparse
 import json
 import re
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -89,7 +90,17 @@ def write_review_manifest(
     return str(path)
 
 
-def run(dry_run: bool = False, force_local: bool = False, buffer_draft: bool = False):
+def posts_already_today(cfg: dict, channel_id: str) -> list[dict]:
+    """Buffer posts scheduled/sent for this channel on today's local date."""
+    tz = ZoneInfo(cfg.get("timezone", "Asia/Singapore"))
+    now = datetime.now(tz)
+    start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    end = start + timedelta(days=1) - timedelta(seconds=1)
+    return poster.posts_between(channel_id, start.isoformat(), end.isoformat())
+
+
+def run(dry_run: bool = False, force_local: bool = False, buffer_draft: bool = False,
+        story_url: str = ""):
     with open("config.json", encoding="utf-8") as config_file:
         cfg = json.load(config_file)
     account_id = cfg["buffer"]["channel_id"]
@@ -110,9 +121,33 @@ def run(dry_run: bool = False, force_local: bool = False, buffer_draft: bool = F
         print("\n── STEP 0: BUFFER PREFLIGHT ──")
         poster.validate_account(account_id, account_username)
 
-    print("\n── STEP 1: SCRAPE ──")
-    stories = scraper.run()
-    if not stories:
+    if not dry_run and not buffer_draft and not story_url:
+        print("\n── ONE POST PER DAY CHECK ──")
+        try:
+            existing = posts_already_today(cfg, account_id)
+        except Exception as e:
+            existing = []
+            print(f"[pipeline] Could not check Buffer for today's posts ({e}); continuing.")
+        if existing:
+            first = existing[0]
+            print(
+                f"[pipeline] Buffer already has a post for today ({first.get('status')} at "
+                f"{first.get('dueAt')}): {str(first.get('text', ''))[:60]!r}. Skipping, one post per day."
+            )
+            return
+
+    if story_url:
+        print("\n── STEP 1: STORY FROM URL ──")
+        story = scraper.story_from_url(story_url)
+        if not story.get("raw_text"):
+            raise RuntimeError(f"Could not read article text from {story_url}")
+        pairs = [(story, selector.write_carousel(story))]
+        stories = []
+    else:
+        print("\n── STEP 1: SCRAPE ──")
+        stories = scraper.run()
+        pairs = None
+    if not story_url and not stories:
         print("[pipeline] No stories scraped — exiting.")
         sys.exit(0)
 
@@ -126,8 +161,9 @@ def run(dry_run: bool = False, force_local: bool = False, buffer_draft: bool = F
         print(f"[pipeline] Already posted {hours_ago:.1f}h ago — skipping to avoid double-post.")
         sys.exit(0)
 
-    print("\n── STEP 3: SELECT + WRITE ──")
-    pairs = selector.run(stories, posted_urls, force_local=force_local)
+    if pairs is None:
+        print("\n── STEP 3: SELECT + WRITE ──")
+        pairs = selector.run(stories, posted_urls, force_local=force_local)
     if not pairs:
         print("[pipeline] No fresh stories to post — exiting.")
         sys.exit(0)
@@ -184,7 +220,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--dry-run", action="store_true", help="Build but don't post")
     parser.add_argument("--local", action="store_true", help="Lead with a local (e.g. Singapore) story")
+    parser.add_argument("--url", default="", help="Build the carousel for this article URL")
     parser.add_argument("--buffer-draft", action="store_true",
                         help="Send to Buffer as a draft instead of publishing (end-to-end test)")
     args = parser.parse_args()
-    run(dry_run=args.dry_run, force_local=args.local, buffer_draft=args.buffer_draft)
+    run(dry_run=args.dry_run, force_local=args.local, buffer_draft=args.buffer_draft,
+        story_url=args.url.strip())

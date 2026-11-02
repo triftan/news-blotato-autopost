@@ -55,5 +55,29 @@ class CarouselFactValidationTests(unittest.TestCase):
         self.assertEqual(data["story"]["url"], "https://example.com/story")
 
 
+
+class OnePostPerDayTests(unittest.TestCase):
+    def test_skips_when_buffer_already_has_a_post_today(self):
+        from unittest.mock import patch
+        with patch.object(pipeline.poster, "validate_account"), \
+             patch.object(pipeline.poster, "posts_between",
+                          return_value=[{"status": "scheduled", "dueAt": "x", "text": "queued"}]) as lookup, \
+             patch.object(pipeline.scraper, "run") as scrape:
+            pipeline.run()
+        scrape.assert_not_called()
+        start, end = lookup.call_args.args[1], lookup.call_args.args[2]
+        self.assertTrue(start.endswith("+08:00") and "T00:00:00" in start)
+        self.assertIn("T23:59:59", end)
+
+    def test_continues_when_today_is_free(self):
+        from unittest.mock import patch
+        with patch.object(pipeline.poster, "validate_account"), \
+             patch.object(pipeline.poster, "posts_between", return_value=[]), \
+             patch.object(pipeline.scraper, "run", return_value=[]) as scrape:
+            with self.assertRaises(SystemExit):
+                pipeline.run()
+        scrape.assert_called_once()
+
+
 if __name__ == "__main__":
     unittest.main()

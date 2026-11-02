@@ -430,6 +430,42 @@ def enrich_with_text(stories: list[dict]) -> list[dict]:
     return stories
 
 
+def story_from_url(url: str) -> dict:
+    """Build a story dict for one article URL (used for hand-picked posts)."""
+    url = decode_google_news_url(url)
+    headline = ""
+    try:
+        r = requests.get(url, timeout=15, headers={"User-Agent": _BROWSER_UA}, allow_redirects=True)
+        soup = BeautifulSoup(r.text, "html.parser")
+        tag = soup.find("meta", property="og:title") or soup.find("meta", attrs={"name": "twitter:title"})
+        headline = (tag.get("content") if tag else "") or (soup.title.get_text() if soup.title else "")
+    except Exception as e:
+        print(f"[scraper] Could not read headline from {url}: {e}")
+    headline = re.split(r"\s+[|\-–]\s+(?=[^|\-–]*$)", headline.strip())[0] or url
+    text, og_image = fetch_article_content(url)
+
+    cfg = _load_cfg()
+    keywords = [k.lower().strip() for k in cfg.get("local_keywords", []) if k.strip()]
+    keywords.append(str(cfg.get("country", "")).lower())
+    blob = f"{headline} {text[:800]}".lower()
+    category = "local" if any(k and k in blob for k in keywords) else "global_ai"
+
+    story = {
+        "headline": headline,
+        "summary": text[:300] or headline,
+        "url": url,
+        "source": urlparse(url).netloc.replace("www.", ""),
+        "published_at": datetime.now(timezone.utc).isoformat(),
+        "category": category,
+        "hn_score": 0, "reddit_score": 0, "gh_stars": 0,
+        "raw_text": text,
+    }
+    if og_image:
+        story["og_image_url"] = og_image
+    print(f"[scraper] Story from URL: {headline[:70]} ({category}, {len(text)} chars)")
+    return story
+
+
 def _load_cfg() -> dict:
     with open("config.json") as f:
         return json.load(f)
