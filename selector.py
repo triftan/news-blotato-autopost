@@ -25,8 +25,8 @@ LOCAL_CONTEXT  = _CFG.get("local_context", "local founders and businesses")
 FLAG_EMOJI     = _CFG.get("flag_emoji", "🇲🇾")
 HASHTAGS       = " ".join(_CFG.get("posting", {}).get("hashtags", ["#AINews"]))
 LOCAL_SHARE    = float(_CFG.get("local_share", 0.2))
-SCORE_MODEL    = _CFG.get("openrouter", {}).get("score_model", "anthropic/claude-haiku-5.5")
-WRITE_MODEL    = _CFG.get("openrouter", {}).get("write_model", "anthropic/claude-sonnet-5.5")
+SCORE_MODEL    = _CFG.get("openrouter", {}).get("score_model", "deepseek/deepseek-v4.1-flash")
+WRITE_MODEL    = _CFG.get("openrouter", {}).get("write_model", "deepseek/deepseek-v4.1-flash")
 
 
 def _chat(model: str, prompt: str, max_tokens: int) -> str:

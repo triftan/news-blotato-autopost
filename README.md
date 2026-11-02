@@ -24,7 +24,7 @@ A run also refuses to post if the last successful post was less than 7 hours ago
 | --- | --- |
 | GitHub Actions | Free on the public GitHub plan (this template runs one job a day). |
 | Pixabay | Free API key. |
-| OpenRouter | Pay per use. Scoring uses Claude Haiku and the carousel text uses Claude Sonnet by default. Change the models under `openrouter` in `config.json`. |
+| OpenRouter | Pay per use. Both scoring and writing use DeepSeek V4.1 Flash by default. Change the models under `openrouter` in `config.json`. |
 | Buffer | Free or paid plan. Buffer connects your Instagram account and publishes the carousel. |
 
 You do not put API keys in the code. The workflow reads `OPENROUTER_API_KEY`, `BUFFER_API_KEY`, and `PIXABAY_API_KEY` from GitHub Actions secrets. It also uses the built-in `GITHUB_TOKEN` to host slide images on the `media` branch, because Buffer's API only accepts public image URLs. Keep the repository public so those URLs work.

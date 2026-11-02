@@ -26,8 +26,8 @@
     "instagram_username": "brandonlee.ai"
   },
   "openrouter": {
-    "score_model": "anthropic/claude-haiku-5.5",
-    "write_model": "anthropic/claude-sonnet-5.5"
+    "score_model": "deepseek/deepseek-v4.1-flash",
+    "write_model": "deepseek/deepseek-v4.1-flash"
   },
   "google_news_queries": [
     "artificial+intelligence+breakthrough",
