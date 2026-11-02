@@ -15,6 +15,10 @@ on:
         description: 'Send to Buffer as a draft instead of publishing (end-to-end test, nothing posts)'
         type: boolean
         default: false
+      story_url:
+        description: 'Optional: build the carousel for this article URL instead of picking a story'
+        type: string
+        default: ''
       local_story:
         description: 'Lead with the best local (Singapore) story, skipping the quality gate'
         type: boolean
@@ -57,9 +61,10 @@ jobs:
 
       - name: Run pipeline
         if: ${{ steps.guard.outcome == 'success' && steps.guard.outputs.skip != 'true' }}
-        run: python pipeline.py ${{ github.event.inputs.dry_run == 'true' && '--dry-run' || '' }} ${{ github.event.inputs.local_story == 'true' && '--local' || '' }} ${{ github.event.inputs.buffer_draft == 'true' && '--buffer-draft' || '' }}
+        run: python pipeline.py ${{ github.event.inputs.dry_run == 'true' && '--dry-run' || '' }} ${{ github.event.inputs.local_story == 'true' && '--local' || '' }} ${{ github.event.inputs.buffer_draft == 'true' && '--buffer-draft' || '' }} ${STORY_URL:+--url "$STORY_URL"}
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          STORY_URL: ${{ github.event.inputs.story_url }}
           BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
           PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
           SUPERPOWERS_API_KEY: ${{ secrets.SUPERPOWERS_API_KEY }}  # Reddit via superpowers.social (optional)
