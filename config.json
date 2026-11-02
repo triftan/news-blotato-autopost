@@ -95,5 +95,6 @@
     "barrons.com",
     "businessinsider.com"
   ],
-  "min_local_score": 75
+  "min_local_score": 75,
+  "timezone": "Asia/Singapore"
 }

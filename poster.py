@@ -65,6 +65,7 @@ CHANNEL_QUERY = """
 query Channel($id: ChannelId!) {
   channel(input: { id: $id }) {
     id
+    organizationId
     name
     displayName
     service
@@ -106,6 +107,39 @@ def validate_account(channel_id: str, expected_username: Optional[str] = None) -
             )
     print(f"[poster] Buffer ready: Instagram @{channel.get('name')} (channel {channel_id})")
     return channel
+
+
+DAY_POSTS_QUERY = """
+query DayPosts($org: OrganizationId!, $channel: ChannelId!, $start: DateTime!, $end: DateTime!) {
+  posts(
+    first: 20
+    input: {
+      organizationId: $org
+      filter: {
+        channelIds: [$channel]
+        status: [scheduled, sending, sent]
+        dueAt: { start: $start, end: $end }
+      }
+    }
+  ) {
+    edges { node { id status dueAt text } }
+  }
+}
+"""
+
+
+def posts_between(channel_id: str, start_iso: str, end_iso: str) -> list[dict]:
+    """Scheduled, sending, or sent Buffer posts for this channel due in [start, end]."""
+    channel = _graphql(CHANNEL_QUERY, {"id": channel_id}, "channel check").get("channel") or {}
+    org = channel.get("organizationId")
+    if not org:
+        raise RuntimeError(f"Buffer channel {channel_id} has no organization id")
+    data = _graphql(
+        DAY_POSTS_QUERY,
+        {"org": org, "channel": channel_id, "start": start_iso, "end": end_iso},
+        "post lookup",
+    )
+    return [edge["node"] for edge in (data.get("posts") or {}).get("edges", [])]
 
 
 # ── Image hosting on GitHub ──────────────────────────────────────────────

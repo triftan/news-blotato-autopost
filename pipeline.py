@@ -6,7 +6,8 @@ import argparse
 import json
 import re
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -89,6 +90,15 @@ def write_review_manifest(
     return str(path)
 
 
+def posts_already_today(cfg: dict, channel_id: str) -> list[dict]:
+    """Buffer posts scheduled/sent for this channel on today's local date."""
+    tz = ZoneInfo(cfg.get("timezone", "Asia/Singapore"))
+    now = datetime.now(tz)
+    start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    end = start + timedelta(days=1) - timedelta(seconds=1)
+    return poster.posts_between(channel_id, start.isoformat(), end.isoformat())
+
+
 def run(dry_run: bool = False, force_local: bool = False, buffer_draft: bool = False,
         story_url: str = ""):
     with open("config.json", encoding="utf-8") as config_file:
@@ -110,6 +120,21 @@ def run(dry_run: bool = False, force_local: bool = False, buffer_draft: bool = F
     if not dry_run:
         print("\n── STEP 0: BUFFER PREFLIGHT ──")
         poster.validate_account(account_id, account_username)
+
+    if not dry_run and not buffer_draft and not story_url:
+        print("\n── ONE POST PER DAY CHECK ──")
+        try:
+            existing = posts_already_today(cfg, account_id)
+        except Exception as e:
+            existing = []
+            print(f"[pipeline] Could not check Buffer for today's posts ({e}); continuing.")
+        if existing:
+            first = existing[0]
+            print(
+                f"[pipeline] Buffer already has a post for today ({first.get('status')} at "
+                f"{first.get('dueAt')}): {str(first.get('text', ''))[:60]!r}. Skipping, one post per day."
+            )
+            return
 
     if story_url:
         print("\n── STEP 1: STORY FROM URL ──")
