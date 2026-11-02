@@ -1,48 +1,99 @@
 {
-  "_comment": "Replace every YOUR_ value before a live post. country, currency, landmarks, hashtags, and google_news_queries are Malaysia examples — edit them for your audience. The scrapers URLs are examples only; scraper.py does not read that block.",
-  "country": "Malaysia",
-  "account_handle": "@YOUR_INSTAGRAM_HANDLE",
-  "community_name": "YOUR_BRAND_NAME",
-  "community_url": "YOUR_COMMUNITY_URL",
-  "comment_keyword": "YOUR_COMMENT_KEYWORD",
-  "flag_emoji": "🇲🇾",
-  "currency": "Ringgit (RM)",
-  "government_bodies": "NAIO, MDEC, MOSTI",
-  "local_landmarks": "KLCC, Putrajaya, Penang, Johor Bahru",
-  "local_context": "local founders, SMEs, and professionals",
+  "_comment": "Replace every YOUR_ value before a live post. min_local_score: a Singapore story only leads when it scores at least this (0-100); otherwise the best global story posts. google_news_queries and subreddits drive what gets found. Stories from paywalled_domains are skipped because the writer only gets a headline.",
+  "country": "Singapore",
+  "account_handle": "@brandonlee.ai",
+  "community_name": "Brandonlee.ai",
+  "community_url": "brandonlee.ai/group",
+  "comment_keyword": "AI",
+  "flag_emoji": "🇸🇬",
+  "currency": "Singapore dollars (S$)",
+  "government_bodies": "IMDA, GovTech, Smart Nation, AI Singapore, MAS, CSA",
+  "local_landmarks": "Marina Bay Sands, the CBD, one-north, Changi",
+  "local_context": "local founders, SMEs, students, and professionals",
   "posting": {
     "slides_count": 10,
     "max_hashtags": 5,
-    "hashtags": ["#MalaysiaAI", "#AINews", "#ArtificialIntelligence", "#TechNews", "#Malaysia"]
+    "hashtags": [
+      "#AINews",
+      "#ArtificialIntelligence",
+      "#TechNews",
+      "#AI"
+    ],
+    "local_hashtags": [
+      "#Singapore"
+    ]
   },
-  "blotato": {
-    "instagram_account_id": "YOUR_BLOTATO_INSTAGRAM_ACCOUNT_ID",
-    "instagram_username": "YOUR_INSTAGRAM_USERNAME"
+  "buffer": {
+    "channel_id": "6a47686c5ab6d2f1069c7d07",
+    "instagram_username": "brandonlee.ai"
+  },
+  "openrouter": {
+    "score_model": "deepseek/deepseek-v4.1-flash",
+    "write_model": "deepseek/deepseek-v4.1-flash"
   },
   "google_news_queries": [
-    "Malaysia+AI+artificial+intelligence",
-    "Malaysia+digital+economy",
-    "MDEC+AI+Malaysia",
-    "Kuala+Lumpur+tech+startup+AI",
-    "Malaysia+data+centre+investment",
-    "artificial+intelligence+Southeast+Asia+Malaysia",
-    "open+source+AI+Malaysia",
-    "ChatGPT+Malaysia+business",
-    "Malaysia+AI+policy+government",
-    "Malaysia+automation+workforce",
-    "generative+AI+Malaysia+enterprise",
-    "Malaysia+fintech+AI+banking",
-    "Malaysian+startup+funding+AI",
-    "AI+tools+Malaysia+SME",
-    "Malaysia+smart+city+AI",
-    "Iskandar+Malaysia+AI+investment",
-    "Malaysia+AI+healthcare",
-    "Malaysia+education+AI+university",
-    "AI+Malaysia+jobs+employment",
-    "NAIO+Malaysia+national+AI+office"
+    "artificial+intelligence+breakthrough",
+    "OpenAI+OR+Anthropic+OR+Google+DeepMind+announces",
+    "AI+controversy",
+    "AI+lawsuit",
+    "AI+scandal+backlash",
+    "AI+went+viral",
+    "shocking+AI+study",
+    "AI+hack+OR+jailbreak+OR+exploit",
+    "AI+data+breach+cyberattack",
+    "deepfake+scam",
+    "AI+discovery+scientists",
+    "AI+robot+humanoid",
+    "AI+replacing+jobs+layoffs",
+    "AI+regulation+ban",
+    "ChatGPT+hack+trick+tip",
+    "new+AI+tool+launch",
+    "Singapore+AI",
+    "Singapore+deepfake+OR+scam+AI",
+    "Singapore+AI+jobs+OR+layoffs+OR+retrenchment",
+    "Singapore+AI+students+OR+schools+OR+cheating",
+    "Singapore+AI+privacy+OR+surveillance+OR+police",
+    "IMDA+OR+GovTech+OR+%22Smart+Nation%22+AI"
   ],
-  "scrapers": {
-    "tech_in_asia": "https://www.techinasia.com/feed",
-    "e27": "https://e27.co/feed/"
-  }
+  "local_keywords": [
+    "singapore",
+    "imda",
+    "govtech",
+    "smart nation",
+    "ai singapore",
+    "mas ",
+    "csa ",
+    "sgd",
+    "s$",
+    "marina bay",
+    "changi",
+    "nus",
+    "ntu",
+    "temasek",
+    "grab",
+    "sea group",
+    "shopee"
+  ],
+  "subreddits": [
+    "artificial",
+    "OpenAI",
+    "ChatGPT",
+    "LocalLLaMA",
+    "singularity",
+    "technology",
+    "Futurology",
+    "cybersecurity",
+    "singapore"
+  ],
+  "paywalled_domains": [
+    "bloomberg.com",
+    "ft.com",
+    "wsj.com",
+    "economist.com",
+    "nytimes.com",
+    "theinformation.com",
+    "barrons.com",
+    "businessinsider.com"
+  ],
+  "min_local_score": 75
 }

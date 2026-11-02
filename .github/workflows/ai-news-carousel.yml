@@ -2,13 +2,21 @@ name: AI News Carousel
 
 on:
   schedule:
-    # 03:00 UTC every day. That is 11:00 in Malaysia (UTC+8).
+    # 03:00 UTC every day. That is 11:00 in Singapore (UTC+8).
     # Change the hour and minute here if you want a different posting time.
     - cron: '0 3 * * *'
   workflow_dispatch:
     inputs:
       dry_run:
-        description: 'Dry run — build slides and save artifacts but skip Instagram post'
+        description: 'Dry run: build slides and save artifacts but skip Instagram post'
+        type: boolean
+        default: false
+      buffer_draft:
+        description: 'Send to Buffer as a draft instead of publishing (end-to-end test, nothing posts)'
+        type: boolean
+        default: false
+      local_story:
+        description: 'Lead with the best local (Singapore) story, skipping the quality gate'
         type: boolean
         default: false
 
@@ -49,14 +57,16 @@ jobs:
 
       - name: Run pipeline
         if: ${{ steps.guard.outcome == 'success' && steps.guard.outputs.skip != 'true' }}
-        run: python pipeline.py ${{ github.event.inputs.dry_run == 'true' && '--dry-run' || '' }}
+        run: python pipeline.py ${{ github.event.inputs.dry_run == 'true' && '--dry-run' || '' }} ${{ github.event.inputs.local_story == 'true' && '--local' || '' }} ${{ github.event.inputs.buffer_draft == 'true' && '--buffer-draft' || '' }}
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          BLOTATO_API_KEY: ${{ secrets.BLOTATO_API_KEY }}
-          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
+          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+          SUPERPOWERS_API_KEY: ${{ secrets.SUPERPOWERS_API_KEY }}  # Reddit via superpowers.social (optional)
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # hosts slides on the media branch for Buffer
 
       - name: Commit posted_urls.json
-        if: ${{ steps.guard.outcome == 'success' && steps.guard.outputs.skip != 'true' && github.event.inputs.dry_run != 'true' }}
+        if: ${{ steps.guard.outcome == 'success' && steps.guard.outputs.skip != 'true' && github.event.inputs.dry_run != 'true' && github.event.inputs.buffer_draft != 'true' }}
         continue-on-error: true
         run: |
           git config user.name "github-actions[bot]"

@@ -10,3 +10,4 @@ queue.json
 *.png
 !logo.png
 !docs/**
+dry-run-slides/

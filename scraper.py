@@ -1,6 +1,9 @@
 """Scrape AI news from Google News RSS, HackerNews, Reddit, GitHub Trending."""
 import json
+import os
+import re
 import time
+from urllib.parse import quote, urlparse
 import feedparser
 import requests
 from datetime import datetime, timezone, timedelta
@@ -9,7 +12,8 @@ from bs4 import BeautifulSoup
 AI_KEYWORDS = [
     "ai", "llm", "gpt", "claude", "gemini", "anthropic", "openai", "machine learning",
     "deep learning", "neural", "transformer", "diffusion", "chatbot", "model", "inference",
-    "agent", "rag", "fine-tun", "malaysia", "mdec", "naio", "mosti", "data centre", "data center",
+    "agent", "rag", "fine-tun", "data centre", "data center", "deepfake", "robot", "humanoid",
+    "jailbreak", "hack", "breach", "exploit", "quantum", "breakthrough", "chatgpt", "nvidia",
 ]
 
 def _is_ai_relevant(text: str) -> bool:
@@ -69,62 +73,145 @@ def fetch_hackernews(min_score: int = 150, max_stories: int = 30) -> list[dict]:
     return stories
 
 
-def fetch_reddit(subreddits: list[str] = None, min_score: int = 60) -> list[dict]:
-    """Fetch hot Reddit posts — no auth needed via JSON API."""
+SUPERPOWERS_MCP_URL = "https://superpowers.social/mcp"
+_BROWSER_UA = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/124.0 Safari/537.36"
+)
+
+
+class SuperpowersClient:
+    """Minimal MCP-over-HTTP client for superpowers.social (Reddit proxy).
+
+    Reddit blocks GitHub Actions IPs, so Reddit posts are fetched through the
+    Social Superpowers MCP server with an API key instead.
+    """
+
+    def __init__(self, api_key: str):
+        self.headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+        }
+        self._next_id = 0
+        self._initialize()
+
+    def _post(self, method: str, params: dict | None = None, notify: bool = False):
+        body = {"jsonrpc": "2.0", "method": method}
+        if params is not None:
+            body["params"] = params
+        if not notify:
+            self._next_id += 1
+            body["id"] = self._next_id
+        r = requests.post(SUPERPOWERS_MCP_URL, headers=self.headers, json=body, timeout=60)
+        if r.status_code == 401:
+            raise RuntimeError("Social Superpowers rejected SUPERPOWERS_API_KEY (HTTP 401)")
+        r.raise_for_status()
+        if "mcp-session-id" in r.headers:
+            self.headers["Mcp-Session-Id"] = r.headers["mcp-session-id"]
+        if notify:
+            return None
+        return self._parse(r)
+
+    @staticmethod
+    def _parse(r: requests.Response) -> dict:
+        if "text/event-stream" in r.headers.get("content-type", ""):
+            message = None
+            for line in r.text.splitlines():
+                if line.startswith("data:"):
+                    data = line[5:].strip()
+                    if data:
+                        message = json.loads(data)
+            if message is None:
+                raise RuntimeError("Social Superpowers returned an empty event stream")
+        else:
+            message = r.json()
+        if message.get("error"):
+            raise RuntimeError(f"Social Superpowers error: {message['error']}")
+        return message.get("result", {})
+
+    def _initialize(self):
+        self._post("initialize", {
+            "protocolVersion": "2025-06-18",
+            "capabilities": {},
+            "clientInfo": {"name": "news-blotato-autopost", "version": "1.0"},
+        })
+        self._post("notifications/initialized", notify=True)
+
+    def call(self, tool: str, arguments: dict) -> dict:
+        result = self._post("tools/call", {"name": tool, "arguments": arguments})
+        if result.get("isError"):
+            text = " ".join(c.get("text", "") for c in result.get("content", []))
+            raise RuntimeError(f"{tool} failed: {text[:200]}")
+        if result.get("structuredContent"):
+            return result["structuredContent"]
+        for item in result.get("content", []):
+            if item.get("type") == "text":
+                try:
+                    return json.loads(item["text"])
+                except ValueError:
+                    continue
+        return {}
+
+
+def fetch_reddit(subreddits: list[str] = None, per_sub: int = 10) -> list[dict]:
+    """Fetch today's top posts per subreddit through Social Superpowers.
+
+    The API returns posts ranked by top-of-day, without vote counts, so rank is
+    turned into an approximate reddit_score for the scoring prompt.
+    """
     if subreddits is None:
-        subreddits = ["MachineLearning", "LocalLLaMA", "artificial", "Malaysia"]
+        subreddits = ["MachineLearning", "LocalLLaMA", "artificial"]
 
-    stories = []
-    # Reddit blocks generic bots — use a browser-like user agent
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Accept": "application/json",
-    }
+    api_key = os.environ.get("SUPERPOWERS_API_KEY", "").strip()
+    if not api_key:
+        print("[scraper] Reddit skipped: SUPERPOWERS_API_KEY is not set")
+        return []
+    try:
+        client = SuperpowersClient(api_key)
+    except Exception as e:
+        print(f"[scraper] Reddit skipped: {e}")
+        return []
+
+    local_sub = _local_subreddit()
     cutoff = datetime.now(timezone.utc) - timedelta(hours=48)
-
+    rank_scores = [500, 300, 200, 150, 120, 100, 80, 70, 60, 60]
+    stories = []
     for sub in subreddits:
         try:
-            url = f"https://www.reddit.com/r/{sub}/hot.json?limit=25"
-            r = requests.get(url, headers=headers, timeout=10)
-            if r.status_code == 429:
-                print(f"[scraper] Reddit r/{sub}: rate limited, skipping")
-                time.sleep(2)
-                continue
-            r.raise_for_status()
-            data = r.json()
-            posts = data.get("data", {}).get("children", [])
-            for post in posts:
-                p = post.get("data", {})
-                score = p.get("score", 0)
-                title = p.get("title", "")
-                if score < min_score:
-                    continue
-                if sub not in ("malaysia",) and not _is_ai_relevant(title):
-                    continue
-                created = datetime.fromtimestamp(p.get("created_utc", 0), tz=timezone.utc)
-                if created < cutoff:
-                    continue
-                link = p.get("url", "")
-                if "reddit.com" in link:
-                    link = f"https://reddit.com{p.get('permalink','')}"
-                stories.append({
-                    "headline": title,
-                    "summary": p.get("selftext", "")[:300] or title,
-                    "url": link,
-                    "source": sub,
-                    "published_at": created.isoformat(),
-                    "category": "malaysia_local" if sub == "malaysia" else "global_ai",
-                    "hn_score": 0,
-                    "reddit_score": score,
-                    "reddit_comments": p.get("num_comments", 0),
-                    "gh_stars": 0,
-                    "raw_text": "",
-                })
-            time.sleep(1)
+            data = client.call("reddit-get-posts", {
+                "subreddit": sub, "count": per_sub, "time_filter": "day",
+            })
         except Exception as e:
             print(f"[scraper] Reddit r/{sub} error: {e}")
+            continue
+        kept = 0
+        for rank, p in enumerate(data.get("posts", [])):
+            title = p.get("title", "")
+            is_local = sub.lower() == local_sub
+            if not is_local and not _is_ai_relevant(title):
+                continue
+            created = datetime.fromtimestamp(p.get("createdUtc", 0) or 0, tz=timezone.utc)
+            if created < cutoff:
+                continue
+            preview = (p.get("selftext_preview") or "").replace("[link]", "").replace("[comments]", "")
+            preview = re.sub(r"submitted by /u/\S+", "", preview).strip()
+            stories.append({
+                "headline": title,
+                "summary": preview[:300] or title,
+                "url": p.get("url", ""),
+                "source": f"r/{sub}",
+                "published_at": created.isoformat(),
+                "category": "local" if is_local else "global_ai",
+                "hn_score": 0,
+                "reddit_score": rank_scores[min(rank, len(rank_scores) - 1)],
+                "gh_stars": 0,
+                "raw_text": preview,
+            })
+            kept += 1
+        print(f"[scraper] Reddit r/{sub}: {kept} posts kept")
 
-    print(f"[scraper] Reddit: {len(stories)} stories ({min_score}+ upvotes)")
+    print(f"[scraper] Reddit: {len(stories)} stories via Social Superpowers")
     return stories
 
 
@@ -246,12 +333,54 @@ def fetch_google_news(queries: list[str], hours_back: int = 14) -> list[dict]:
     return _dedupe(stories)
 
 
+def decode_google_news_url(url: str) -> str:
+    """Turn a news.google.com/rss/articles/... redirect into the real article URL.
+
+    Returns the original URL when decoding fails.
+    """
+    if "news.google.com" not in url:
+        return url
+    try:
+        article_id = urlparse(url).path.rstrip("/").split("/")[-1]
+        page = requests.get(
+            f"https://news.google.com/rss/articles/{article_id}",
+            headers={"User-Agent": _BROWSER_UA}, timeout=15,
+        )
+        div = BeautifulSoup(page.text, "html.parser").select_one("c-wiz > div[jscontroller]")
+        if div is None:
+            return url
+        signature, timestamp = div.get("data-n-a-sg"), div.get("data-n-a-ts")
+        if not signature or not timestamp:
+            return url
+        request = [
+            "Fbv4je",
+            '["garturlreq",[["X","X",["X","X"],null,null,1,1,"US:en",null,1,null,null,null,'
+            'null,null,0,1],"X","X",1,[1,1,1],1,1,null,0,0,null,0],'
+            f'"{article_id}",{timestamp},"{signature}"]',
+        ]
+        resp = requests.post(
+            "https://news.google.com/_/DotsSplashUi/data/batchexecute",
+            headers={
+                "User-Agent": _BROWSER_UA,
+                "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+            },
+            data=f"f.req={quote(json.dumps([[request]]))}",
+            timeout=15,
+        )
+        body = resp.text.split("\n\n")[1]
+        decoded = json.loads(json.loads(body)[0][2])[1]
+        return decoded if isinstance(decoded, str) and decoded.startswith("http") else url
+    except Exception as e:
+        print(f"[scraper] Google News decode failed: {e}")
+        return url
+
+
 def fetch_article_content(url: str) -> tuple[str, str]:
     """Fetch article body text AND og:image URL in a single request.
     Returns (text, og_image_url).
     """
     try:
-        r = requests.get(url, timeout=12, headers={"User-Agent": "Mozilla/5.0"}, allow_redirects=True)
+        r = requests.get(url, timeout=12, headers={"User-Agent": _BROWSER_UA}, allow_redirects=True)
         soup = BeautifulSoup(r.text, "html.parser")
 
         # Extract og:image (the article's hero/featured image)
@@ -283,20 +412,41 @@ def fetch_article_text(url: str) -> str:
 def enrich_with_text(stories: list[dict]) -> list[dict]:
     """Add raw_text and og_image_url to each story by fetching the article."""
     for story in stories:
-        if not story.get("raw_text"):
+        if "news.google.com" in story.get("url", ""):
+            real_url = decode_google_news_url(story["url"])
+            if real_url != story["url"]:
+                story["google_news_url"] = story["url"]
+                story["url"] = real_url
+            time.sleep(0.3)
+        if not story.get("raw_text") or len(story.get("raw_text", "")) < 400:
             text, og_image = fetch_article_content(story["url"])
-            story["raw_text"] = text
+            if len(text) > len(story.get("raw_text", "")):
+                story["raw_text"] = text
+            if text and story.get("summary", "") == story.get("headline", ""):
+                story["summary"] = text[:300]
             if og_image:
                 story["og_image_url"] = og_image
                 print(f"[scraper] og:image found for: {story['headline'][:50]}...")
     return stories
 
 
+def _load_cfg() -> dict:
+    with open("config.json") as f:
+        return json.load(f)
+
+
+def _local_subreddit() -> str:
+    return str(_load_cfg().get("country", "")).lower().replace(" ", "")
+
+
 def _categorise(query: str) -> str:
-    malaysia_keywords = ["malaysia", "mdec", "naio", "mosti", "klcc", "putrajaya", "penang", "johor"]
-    q = query.lower()
-    if any(k in q for k in malaysia_keywords):
-        return "malaysia_local"
+    """Tag a Google News query as local when it mentions the configured country."""
+    cfg = _load_cfg()
+    keywords = [k.lower() for k in cfg.get("local_keywords", [])]
+    keywords.append(str(cfg.get("country", "")).lower())
+    q = query.lower().replace("+", " ")
+    if any(k.strip() and k.strip() in q for k in keywords):
+        return "local"
     return "global_ai"
 
 
@@ -317,7 +467,7 @@ def run() -> list[dict]:
 
     all_stories = []
 
-    # Tier 1 — Malaysian local (Google News)
+    # Tier 1 — Google News (global + local queries from config.json)
     queries = cfg["google_news_queries"]
     print(f"[scraper] Google News: {len(queries)} queries...")
     gn = fetch_google_news(queries)
@@ -331,10 +481,9 @@ def run() -> list[dict]:
     # Tier 2 — HackerNews (pre-validated by community)
     all_stories.extend(fetch_hackernews(min_score=150))
 
-    # Tier 3 — Reddit hot AI subs
+    # Tier 3 — Reddit hot posts (AI + viral tech subs, plus the local country sub)
     all_stories.extend(fetch_reddit(
-        subreddits=["MachineLearning", "LocalLLaMA", "artificial", "malaysia"],
-        min_score=60
+        subreddits=cfg.get("subreddits", ["MachineLearning", "LocalLLaMA", "artificial"]),
     ))
 
     # Tier 4 — GitHub Trending AI
@@ -347,7 +496,7 @@ def run() -> list[dict]:
     stories = _dedupe(all_stories)
     print(f"\n[scraper] Total unique stories: {len(stories)}")
     print(f"[scraper] Enriching article text...")
-    stories = enrich_with_text(stories)
+    stories = _dedupe(enrich_with_text(stories))
     print(f"[scraper] Done. {len(stories)} stories ready for selection.")
     return stories
 

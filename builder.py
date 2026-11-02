@@ -119,7 +119,7 @@ def build_html(carousel: dict, image_paths: list[str], out_path: str) -> str:
       <div class="prog-track"><div class="prog-fill" style="width:100%"></div></div>
     </div>""")
 
-    html = f"""<!DOCTYPE html>
+    page = f"""<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
@@ -323,7 +323,7 @@ function go(n){{
 </html>"""
 
     with open(out_path, "w") as f:
-        f.write(html)
+        f.write(page)
     print(f"[builder] HTML written: {out_path}")
     return out_path
 

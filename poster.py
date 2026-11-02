@@ -1,6 +1,12 @@
-"""Upload slides and post carousels to Instagram via the Blotato REST API."""
+"""Host slides on GitHub and post the carousel to Instagram through the Buffer API.
 
-import mimetypes
+Buffer's API has no upload endpoint, so each slide is converted to JPEG and
+committed to a separate `media` branch of this (public) repository. The raw
+GitHub URLs are then handed to Buffer as image assets.
+"""
+
+import base64
+import io
 import os
 import re
 import time
@@ -8,109 +14,196 @@ from pathlib import Path
 from typing import Optional
 
 import requests
+from PIL import Image
 
-BASE_URL = "https://backend.blotato.com/v2"
+BUFFER_URL = "https://api.buffer.com"
+GITHUB_API = "https://api.github.com"
+MEDIA_BRANCH = "media"
 REQUEST_TIMEOUT = 30
 UPLOAD_TIMEOUT = 120
 
 
-def _headers() -> dict[str, str]:
+# ── Buffer ────────────────────────────────────────────────────────────────
+
+def _buffer_headers() -> dict[str, str]:
     """Build API headers lazily so missing or whitespace-only secrets fail clearly."""
-    api_key = os.environ.get("BLOTATO_API_KEY", "").strip()
+    api_key = os.environ.get("BUFFER_API_KEY", "").strip()
     if not api_key:
-        raise RuntimeError("BLOTATO_API_KEY is missing or empty")
-    return {"blotato-api-key": api_key, "Accept": "application/json"}
+        raise RuntimeError("BUFFER_API_KEY is missing or empty")
+    return {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+    }
 
 
-def _response_error(response: requests.Response, action: str) -> RuntimeError:
-    """Return a useful API error without exposing credentials."""
-    body = (getattr(response, "text", "") or "").strip().replace("\n", " ")
-    if len(body) > 500:
-        body = body[:500] + "…"
-    detail = f": {body}" if body else ""
-    return RuntimeError(f"Blotato {action} failed (HTTP {response.status_code}){detail}")
+def _short(text: str, limit: int = 500) -> str:
+    text = (text or "").strip().replace("\n", " ")
+    return text[:limit] + "…" if len(text) > limit else text
 
 
-def _require_success(response: requests.Response, action: str) -> None:
-    if not 200 <= response.status_code < 300:
-        raise _response_error(response, action)
-
-
-def validate_account(account_id: str, expected_username: Optional[str] = None) -> dict:
-    """Verify the API key and configured Instagram account before expensive work."""
-    response = requests.get(
-        f"{BASE_URL}/users/me/accounts",
-        headers=_headers(),
-        params={"platform": "instagram"},
+def _graphql(query: str, variables: dict, action: str) -> dict:
+    """Run one Buffer GraphQL call and return its `data`, raising on any error."""
+    response = requests.post(
+        BUFFER_URL,
+        headers=_buffer_headers(),
+        json={"query": query, "variables": variables},
         timeout=REQUEST_TIMEOUT,
     )
-    _require_success(response, "authentication check")
-    accounts = response.json().get("items", [])
-    account = next((item for item in accounts if str(item.get("id")) == str(account_id)), None)
-    if account is None:
-        available = ", ".join(
-            f"{item.get('id')} (@{item.get('username', 'unknown')})" for item in accounts
-        ) or "none"
+    if not 200 <= response.status_code < 300:
         raise RuntimeError(
-            f"Configured Instagram account {account_id} is not connected in Blotato. "
-            f"Available Instagram accounts: {available}"
+            f"Buffer {action} failed (HTTP {response.status_code}): {_short(response.text)}"
+        )
+    body = response.json()
+    if body.get("errors"):
+        messages = "; ".join(str(e.get("message", e)) for e in body["errors"])
+        raise RuntimeError(f"Buffer {action} failed: {_short(messages)}")
+    return body.get("data") or {}
+
+
+CHANNEL_QUERY = """
+query Channel($id: ChannelId!) {
+  channel(input: { id: $id }) {
+    id
+    name
+    displayName
+    service
+    isDisconnected
+    isLocked
+  }
+}
+"""
+
+
+def validate_account(channel_id: str, expected_username: Optional[str] = None) -> dict:
+    """Verify the API key and that the channel is a connected Instagram account."""
+    data = _graphql(CHANNEL_QUERY, {"id": channel_id}, "channel check")
+    channel = data.get("channel")
+    if not channel:
+        raise RuntimeError(f"Buffer channel {channel_id} was not found for this API key")
+    if str(channel.get("service", "")).lower() != "instagram":
+        raise RuntimeError(
+            f"Buffer channel {channel_id} is {channel.get('service')}, not Instagram"
+        )
+    if channel.get("isDisconnected"):
+        raise RuntimeError(
+            f"Buffer channel @{channel.get('name')} is disconnected. Reconnect it in Buffer."
+        )
+    if channel.get("isLocked"):
+        raise RuntimeError(
+            f"Buffer channel @{channel.get('name')} is locked (plan limit). Unlock it in Buffer."
         )
     if expected_username:
-        actual = str(account.get("username", "")).lstrip("@").lower()
+        actual = str(channel.get("name", "")).lstrip("@").lower()
         expected = expected_username.lstrip("@").lower()
         if actual != expected:
-            raise RuntimeError(
-                f"Blotato account {account_id} (@{actual or 'unknown'}) does not match "
-                f"expected Instagram account @{expected}"
+            # Buffer keeps the old name after an Instagram rename, so the channel id
+            # is what counts. Warn instead of blocking the post.
+            print(
+                f"[poster] Note: Buffer shows this channel as @{actual or 'unknown'}, "
+                f"config.json says @{expected}. Posting to channel {channel_id} anyway. "
+                "Reconnect the channel in Buffer to refresh the name."
             )
-    print(
-        f"[poster] Blotato ready: Instagram @{account.get('username', 'unknown')} "
-        f"(account {account_id})"
+    print(f"[poster] Buffer ready: Instagram @{channel.get('name')} (channel {channel_id})")
+    return channel
+
+
+# ── Image hosting on GitHub ──────────────────────────────────────────────
+
+def _github_headers() -> dict[str, str]:
+    token = os.environ.get("GITHUB_TOKEN", "").strip()
+    if not token:
+        raise RuntimeError("GITHUB_TOKEN is missing; it is needed to host slides for Buffer")
+    return {"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json"}
+
+
+def _github_repo() -> str:
+    repo = os.environ.get("GITHUB_REPOSITORY", "").strip()
+    if not repo:
+        raise RuntimeError("GITHUB_REPOSITORY is missing; it is needed to host slides for Buffer")
+    return repo
+
+
+def _ensure_media_branch(repo: str) -> None:
+    """Create the media branch from the default branch if it does not exist yet."""
+    headers = _github_headers()
+    ref = requests.get(
+        f"{GITHUB_API}/repos/{repo}/git/ref/heads/{MEDIA_BRANCH}",
+        headers=headers, timeout=REQUEST_TIMEOUT,
     )
-    return account
-
-
-def upload_image(image_path: str) -> str:
-    """Upload one local image with Blotato's presigned-upload flow."""
-    path = Path(image_path)
-    content_type = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
-
-    response = requests.post(
-        f"{BASE_URL}/media/uploads",
-        headers=_headers(),
-        json={"filename": path.name},
+    if ref.status_code == 200:
+        return
+    info = requests.get(f"{GITHUB_API}/repos/{repo}", headers=headers, timeout=REQUEST_TIMEOUT)
+    info.raise_for_status()
+    default = info.json()["default_branch"]
+    head = requests.get(
+        f"{GITHUB_API}/repos/{repo}/git/ref/heads/{default}",
+        headers=headers, timeout=REQUEST_TIMEOUT,
+    )
+    head.raise_for_status()
+    created = requests.post(
+        f"{GITHUB_API}/repos/{repo}/git/refs",
+        headers=headers,
+        json={"ref": f"refs/heads/{MEDIA_BRANCH}", "sha": head.json()["object"]["sha"]},
         timeout=REQUEST_TIMEOUT,
     )
-    _require_success(response, "presigned upload creation")
-    data = response.json()
-    presigned_url = data.get("presignedUrl")
-    public_url = data.get("publicUrl")
-    if not presigned_url or not public_url:
-        raise RuntimeError("Blotato upload response omitted presignedUrl or publicUrl")
-
-    with path.open("rb") as image_file:
-        put_response = requests.put(
-            presigned_url,
-            data=image_file,
-            headers={"Content-Type": content_type},
-            timeout=UPLOAD_TIMEOUT,
+    if created.status_code not in (201, 422):  # 422 = created by a parallel run
+        raise RuntimeError(
+            f"Could not create '{MEDIA_BRANCH}' branch (HTTP {created.status_code}): "
+            f"{_short(created.text)}"
         )
-    _require_success(put_response, "file upload")
-
-    print(f"[poster] Uploaded: {path.name} → {public_url[:60]}...")
-    return public_url
 
 
-def upload_all_slides(image_paths: list[str]) -> list[str]:
-    public_urls = []
-    for path in image_paths:
-        public_urls.append(upload_image(path))
-        time.sleep(0.5)
-    return public_urls
+def _to_jpeg_bytes(image_path: str) -> bytes:
+    """Instagram only accepts JPEG, so convert the rendered PNG."""
+    with Image.open(image_path) as img:
+        buffer = io.BytesIO()
+        img.convert("RGB").save(buffer, "JPEG", quality=92)
+        return buffer.getvalue()
 
+
+def upload_image(image_path: str, folder: str) -> str:
+    """Commit one slide as JPEG to the media branch and return its public raw URL."""
+    repo = _github_repo()
+    name = Path(image_path).stem + ".jpg"
+    repo_path = f"slides/{folder}/{name}"
+    response = requests.put(
+        f"{GITHUB_API}/repos/{repo}/contents/{repo_path}",
+        headers=_github_headers(),
+        json={
+            "message": f"media: {folder}/{name} [skip ci]",
+            "content": base64.b64encode(_to_jpeg_bytes(image_path)).decode(),
+            "branch": MEDIA_BRANCH,
+        },
+        timeout=UPLOAD_TIMEOUT,
+    )
+    if response.status_code not in (200, 201):
+        raise RuntimeError(
+            f"Slide upload to GitHub failed (HTTP {response.status_code}): {_short(response.text)}"
+        )
+    url = f"https://raw.githubusercontent.com/{repo}/{MEDIA_BRANCH}/{repo_path}"
+    print(f"[poster] Hosted: {name} → {url}")
+    return url
+
+
+def upload_all_slides(image_paths: list[str], folder: str) -> list[str]:
+    _ensure_media_branch(_github_repo())
+    urls = [upload_image(path, folder) for path in image_paths]
+    # Give raw.githubusercontent.com a moment so Buffer never fetches a 404.
+    for url in urls:
+        for _ in range(10):
+            if requests.head(url, timeout=REQUEST_TIMEOUT).status_code == 200:
+                break
+            time.sleep(3)
+        else:
+            raise RuntimeError(f"Hosted slide is not reachable yet: {url}")
+    return urls
+
+
+# ── Posting ──────────────────────────────────────────────────────────────
 
 def _limit_instagram_hashtags(caption: str, limit: int = 5) -> str:
-    """Keep only the first hashtags allowed by Blotato's Instagram validator."""
+    """Keep only the first few hashtags so the caption stays clean."""
     count = 0
 
     def keep_or_remove(match: re.Match) -> str:
@@ -124,77 +217,86 @@ def _limit_instagram_hashtags(caption: str, limit: int = 5) -> str:
     return cleaned.strip()
 
 
-def post_carousel(account_id: str, caption: str, media_urls: list[str]) -> str:
-    """Submit an Instagram carousel and return its Blotato submission ID."""
-    payload = {
-        "post": {
-            "accountId": account_id,
-            "content": {
-                "platform": "instagram",
-                "text": _limit_instagram_hashtags(caption),
-                "mediaUrls": media_urls,
-            },
-            "target": {"targetType": "instagram"},
+CREATE_POST_MUTATION = """
+mutation CreatePost($input: CreatePostInput!) {
+  createPost(input: $input) {
+    ... on PostActionSuccess { post { id status } }
+    ... on MutationError { message }
+  }
+}
+"""
+
+
+def post_carousel(channel_id: str, caption: str, media_urls: list[str], draft: bool = False) -> str:
+    """Ask Buffer to publish the carousel now (or save it as a draft) and return its id."""
+    variables = {
+        "input": {
+            "channelId": channel_id,
+            "text": _limit_instagram_hashtags(caption),
+            "schedulingType": "automatic",
+            "mode": "shareNow",
+            "needsApproval": False,
+            "assets": [{"image": {"url": url}} for url in media_urls],
+            **({"saveToDraft": True, "mode": "addToQueue"} if draft else {}),
+            "metadata": {"instagram": {"type": "post", "shouldShareToFeed": True}},
         }
     }
-    response = requests.post(
-        f"{BASE_URL}/posts",
-        headers={**_headers(), "Content-Type": "application/json"},
-        json=payload,
-        timeout=REQUEST_TIMEOUT,
-    )
-    _require_success(response, "post submission")
-    submission_id = response.json().get("postSubmissionId")
-    if not submission_id:
-        raise RuntimeError("Blotato accepted the request but returned no postSubmissionId")
-    print(f"[poster] Submitted! submission_id={submission_id}")
-    return submission_id
+    data = _graphql(CREATE_POST_MUTATION, variables, "post submission")
+    result = data.get("createPost") or {}
+    post = result.get("post")
+    if not post or not post.get("id"):
+        raise RuntimeError(f"Buffer rejected the post: {result.get('message') or result}")
+    print(f"[poster] Submitted! buffer_post_id={post['id']} status={post.get('status')}")
+    return post["id"]
 
 
-def wait_for_publication(
-    submission_id: str,
-    timeout: int = 180,
-    poll_interval: int = 10,
-) -> dict:
-    """Wait until Blotato confirms the post is published or failed."""
+POST_STATUS_QUERY = """
+query Post($id: PostId!) {
+  post(input: { id: $id }) {
+    id
+    status
+    externalLink
+    error { message }
+  }
+}
+"""
+
+
+def wait_for_publication(post_id: str, timeout: int = 240, poll_interval: int = 10) -> dict:
+    """Wait until Buffer reports the post as sent or failed."""
     deadline = time.monotonic() + timeout
     while True:
-        response = requests.get(
-            f"{BASE_URL}/posts/{submission_id}",
-            headers=_headers(),
-            timeout=REQUEST_TIMEOUT,
-        )
-        _require_success(response, "post status check")
-        data = response.json()
-        state = data.get("state") if isinstance(data.get("state"), dict) else {}
-        status = str(data.get("status") or state.get("type") or "").lower()
-
-        if status == "published":
-            public_url = data.get("publicUrl") or state.get("publicUrl")
-            print(f"[poster] Published! {public_url or '(URL pending)'}")
-            return data
-        if status == "scheduled":
-            raise RuntimeError(
-                f"Blotato unexpectedly scheduled immediate submission {submission_id}"
-            )
-        if status == "failed":
-            message = data.get("errorMessage") or state.get("errorMessage") or "Unknown error"
-            raise RuntimeError(f"Blotato publication failed: {message}")
+        data = _graphql(POST_STATUS_QUERY, {"id": post_id}, "post status check")
+        post = data.get("post") or {}
+        status = str(post.get("status", "")).lower()
+        if status == "sent":
+            print(f"[poster] Published! {post.get('externalLink') or '(URL pending)'}")
+            return post
+        if status == "error":
+            message = (post.get("error") or {}).get("message") or "Unknown error"
+            raise RuntimeError(f"Buffer publication failed: {message}")
+        if status in ("draft", "needs_approval"):
+            raise RuntimeError(f"Buffer saved post {post_id} as {status} instead of publishing")
         if time.monotonic() >= deadline:
-            raise TimeoutError(
-                f"Blotato submission {submission_id} is still in progress after {timeout}s"
-            )
+            raise TimeoutError(f"Buffer post {post_id} is still '{status}' after {timeout}s")
         time.sleep(poll_interval)
 
 
-def run(image_paths: list[str], caption: str, account_id: str) -> str:
-    """Upload all slides, submit the carousel, and return its submission ID."""
-    print(f"[poster] Uploading {len(image_paths)} slides...")
-    public_urls = upload_all_slides(image_paths)
-    print(f"[poster] Posting carousel to account {account_id}...")
-    submission_id = post_carousel(account_id, caption, public_urls)
-    wait_for_publication(submission_id)
-    return submission_id
+def run(image_paths: list[str], caption: str, channel_id: str, folder: str,
+        draft: bool = False) -> str:
+    """Host all slides, submit the carousel, and return the Buffer post id.
+
+    With draft=True the carousel is saved as a Buffer draft and nothing is published.
+    """
+    print(f"[poster] Hosting {len(image_paths)} slides on GitHub ({MEDIA_BRANCH} branch)...")
+    public_urls = upload_all_slides(image_paths, folder)
+    print(f"[poster] Posting carousel to Buffer channel {channel_id}...")
+    post_id = post_carousel(channel_id, caption, public_urls, draft=draft)
+    if draft:
+        print(f"[poster] Saved as a Buffer draft (not published): {post_id}")
+        return post_id
+    wait_for_publication(post_id)
+    return post_id
 
 
 if __name__ == "__main__":

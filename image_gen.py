@@ -1,4 +1,4 @@
-"""Fetch carousel slide background images from Pexels API — free, real photos."""
+"""Fetch carousel slide background images from Pixabay API — free, real photos."""
 from __future__ import annotations
 import os
 import io
@@ -44,26 +44,24 @@ def _fetch_url_image(url: str) -> bytes | None:
         print(f"[image_gen] og:image download failed: {e}")
         return None
 
-PEXELS_API_KEY = os.environ.get("PEXELS_API_KEY", "")
-
 # 1080x1350 px Instagram portrait (4:5)
 WIDTH, HEIGHT = 1080, 1350
 
 # Default search queries per slide position (used as fallback if no image_prompt).
-# These match the Malaysia examples in config.json. Change the city names with your own.
+# Local slides use Singapore scenes. Change the city names to match config.json.
 # Slides 1, 3, and 10 try a local query first, then fall back to a neutral one.
 # Queries chosen for cinematic drama — bold, moody, visually striking on Instagram
 _DEFAULT_QUERIES = [
-    "Kuala Lumpur KLCC night aerial",           # slide 1  cover  (MY-specific)
+    "Singapore Marina Bay night aerial",        # slide 1  cover  (local)
     "server room blue glow technology dark",    # slide 2  WHAT HAPPENED
-    "Kuala Lumpur skyline golden sunset",       # slide 3  MY angle (MY-specific)
+    "Singapore skyline golden sunset",          # slide 3  why it matters (local)
     "rain window city lights bokeh night",      # slide 4  THE NUMBER
     "silhouette dramatic spotlight empty stage",# slide 5  MOST PEOPLE DON'T KNOW
     "speaker stage spotlight crowd dark",       # slide 6  EXPERT TAKE
     "light trail highway night long exposure",  # slide 7  HOW WE GOT HERE
     "person laptop night window city view",     # slide 8  WHAT TO DO NOW
     "storm clouds lightning dramatic dark sky", # slide 9  WATCH OUT FOR
-    "Kuala Lumpur skyline night city lights",   # slide 10 CTA (MY-specific)
+    "Singapore skyline night city lights",      # slide 10 CTA (local)
 ]
 
 # Neutral fallback queries used when a local search returns no results
@@ -85,7 +83,7 @@ _LOCAL_SLIDE_INDICES = {0, 2, 9}
 
 
 def _prompt_to_query(prompt: str, allow_location: bool = False) -> str:
-    """Trim an image_prompt into a short Pexels-friendly search query.
+    """Trim an image_prompt into a short Pixabay-friendly search query.
 
     By default strips country/location words to avoid wrong-country photo results.
     Set allow_location=True for the cover and the local-angle slides.
@@ -97,7 +95,7 @@ def _prompt_to_query(prompt: str, allow_location: bool = False) -> str:
         "with", "and", "the", "for", "a", "an", "in", "of", "at", "on",
         "9:16", "3:4", "full", "side", "view",
     }
-    # Strip country/place names unless this is a Malaysia-specific slide
+    # Strip country/place names unless this is a local (country-specific) slide
     location_words = {
         "singapore", "malaysia", "america", "american", "usa", "us",
         "china", "chinese", "india", "indian", "australia", "australian",
@@ -111,57 +109,67 @@ def _prompt_to_query(prompt: str, allow_location: bool = False) -> str:
     return " ".join(filtered[:5])
 
 
-def _fetch_pexels(query: str, slide_index: int, fallback_query: str | None = None,
-                  used_urls: set | None = None) -> tuple[bytes | None, str]:
-    """Call Pexels search API and return (raw image bytes, photo_url), or (None, '').
+PIXABAY_CATEGORIES = {
+    "backgrounds", "fashion", "nature", "science", "education", "feelings", "health",
+    "people", "religion", "places", "animals", "industry", "computer", "food", "sports",
+    "transportation", "travel", "buildings", "business", "music",
+}
 
-    Skips photos whose URLs are in used_urls to prevent reuse across posts.
-    """
-    if not PEXELS_API_KEY:
+
+def _pixabay_search(q: str, category: str | None, used_urls: set | None) -> tuple[bytes | None, str]:
+    """One Pixabay search. Picks randomly among the top hits only, to stay on-topic."""
+    api_key = os.environ.get("PIXABAY_API_KEY", "").strip()
+    if not api_key or not q:
         return None, ""
+    params = {
+        "key": api_key,
+        "q": q[:100],
+        "image_type": "photo",
+        "safesearch": "true",
+        "order": "popular",
+        "per_page": 20,
+        "min_width": 900,
+    }
+    if category in PIXABAY_CATEGORIES:
+        params["category"] = category
+    try:
+        resp = requests.get("https://pixabay.com/api/", params=params, timeout=15)
+        resp.raise_for_status()
+        hits = resp.json().get("hits", [])[:8]
+        random.shuffle(hits)
+        for hit in hits:
+            img_url = hit.get("largeImageURL") or hit.get("webformatURL")
+            # Download links rotate per request, so dedupe on the stable page URL.
+            photo_key = hit.get("pageURL") or img_url
+            if not img_url or (used_urls and photo_key in used_urls):
+                continue
+            img_resp = requests.get(img_url, timeout=30)
+            img_resp.raise_for_status()
+            label = f"{q}" + (f" [{category}]" if params.get("category") else "")
+            print(f"[image_gen] Pixabay: '{label}' → {photo_key[:60]}...")
+            return img_resp.content, photo_key
+    except Exception as e:
+        print(f"[image_gen] Pixabay error for '{q}': {e}")
+    return None, ""
 
-    def _search(q: str) -> tuple[bytes | None, str]:
-        try:
-            # Stay on the first two result pages: deeper Pexels pages often drift
-            # away from the query even when they technically match a keyword.
-            for page in random.sample(range(1, 3), 2):
-                resp = requests.get(
-                    "https://api.pexels.com/v1/search",
-                    headers={"Authorization": PEXELS_API_KEY},
-                    params={
-                        "query": q,
-                        "per_page": 15,
-                        "page": page,
-                        "orientation": "portrait",
-                        "size": "large",
-                    },
-                    timeout=15,
-                )
-                resp.raise_for_status()
-                photos = resp.json().get("photos", [])
-                if not photos:
-                    continue
-                # Shuffle and pick first photo not in used_urls
-                random.shuffle(photos)
-                for photo in photos:
-                    img_url = photo["src"]["large2x"]
-                    if used_urls and img_url in used_urls:
-                        continue
-                    img_resp = requests.get(img_url, timeout=30)
-                    img_resp.raise_for_status()
-                    print(f"[image_gen] Pexels: '{q}' (page {page}) → {img_url[:60]}...")
-                    return img_resp.content, img_url
-            print(f"[image_gen] Pexels: no fresh results for '{q}'")
-            return None, ""
-        except Exception as e:
-            print(f"[image_gen] Pexels error for '{q}': {e}")
-            return None, ""
 
-    result, url = _search(query)
-    if result is None and fallback_query and fallback_query != query:
-        print(f"[image_gen] Retrying with neutral fallback: '{fallback_query}'")
-        result, url = _search(fallback_query)
-    return result, url
+def _fetch_pixabay(query: str, slide_index: int, fallback_query: str | None = None,
+                   used_urls: set | None = None, category: str | None = None) -> tuple[bytes | None, str]:
+    """Try the query with its category, then without, then the neutral fallback."""
+    attempts = [(query, category)]
+    if category:
+        attempts.append((query, None))
+    words = query.split()
+    if len(words) > 2:
+        attempts.append((" ".join(words[:2]), category))
+    if fallback_query and fallback_query != query:
+        attempts.append((fallback_query, None))
+    for q, cat in attempts:
+        result, url = _pixabay_search(q, cat, used_urls)
+        if result is not None:
+            return result, url
+    print(f"[image_gen] Pixabay: no fresh results for '{query}'")
+    return None, ""
 
 
 def _crop_and_resize(img_bytes: bytes, path: str):
@@ -186,7 +194,7 @@ def _crop_and_resize(img_bytes: bytes, path: str):
 
 
 def _gradient_fallback(path: str, slide_index: int):
-    """Dark gradient fallback if Pexels unavailable."""
+    """Dark gradient fallback if Pixabay unavailable."""
     palettes = [
         ((10, 10, 30), (25, 20, 60)),
         ((5, 20, 25), (10, 45, 55)),
@@ -213,36 +221,46 @@ def _gradient_fallback(path: str, slide_index: int):
 
 def generate_slide_images(carousel: dict, output_dir: str, og_image_url: str = "",
                           used_img_urls: set | None = None) -> tuple[list[str], set, list[str]]:
-    """Fetch 10 Pexels photos (or gradient fallback) for the carousel slides.
+    """Fetch 10 Pixabay photos (or gradient fallback) for the carousel slides.
 
     Returns (paths, new_used_urls, sources). Sources records whether each slide used
-    an article image, Pexels, or the non-photographic gradient fallback.
+    an article image, Pixabay, or the non-photographic gradient fallback.
     """
     Path(output_dir).mkdir(parents=True, exist_ok=True)
     paths = []
     session_used = set(used_img_urls or set())  # running set for this session too
 
-    # Build Pexels queries.
-    queries = []
+    # Build Pixabay queries. Prefer the writer's literal image_query keywords;
+    # fall back to trimming the descriptive image_prompt.
+    queries: list[str] = []
+    categories: list[str | None] = []
 
-    cover_prompt = carousel.get("cover_image_prompt", "")
-    queries.append(_prompt_to_query(cover_prompt, allow_location=True) if cover_prompt else _DEFAULT_QUERIES[0])
+    def _query_for(item: dict, query_key: str, prompt_key: str, default: str, allow_location: bool) -> str:
+        literal = str(item.get(query_key, "")).strip()
+        if literal and "literal keywords" not in literal:
+            return literal
+        prompt = item.get(prompt_key, "")
+        return _prompt_to_query(prompt, allow_location=allow_location) if prompt else default
+
+    queries.append(_query_for(carousel, "cover_image_query", "cover_image_prompt", _DEFAULT_QUERIES[0], True))
+    categories.append(carousel.get("cover_image_category"))
 
     for i, slide in enumerate(carousel.get("slides", [])):
-        prompt = slide.get("image_prompt", "")
         query_idx = i + 1
-        is_local_slide = query_idx in _LOCAL_SLIDE_INDICES
-        default_prompt = _DEFAULT_QUERIES[min(i + 1, 8)]
-        queries.append(
-            _prompt_to_query(prompt, allow_location=is_local_slide) if prompt
-            else default_prompt
-        )
+        queries.append(_query_for(
+            slide, "image_query", "image_prompt",
+            _DEFAULT_QUERIES[min(query_idx, 8)], query_idx in _LOCAL_SLIDE_INDICES,
+        ))
+        categories.append(slide.get("image_category"))
 
     queries.append(_DEFAULT_QUERIES[9])
+    categories.append("buildings")
 
     while len(queries) < 10:
         queries.append(_DEFAULT_QUERIES[len(queries) % len(_DEFAULT_QUERIES)])
+        categories.append(None)
     queries = queries[:10]
+    categories = categories[:10]
 
     new_urls: set = set()
     sources: list[str] = []
@@ -261,17 +279,17 @@ def generate_slide_images(carousel: dict, output_dir: str, og_image_url: str = "
                 new_urls.add(og_image_url)
                 source = "article"
             else:
-                print("[image_gen] og:image skipped — falling back to Pexels")
+                print("[image_gen] og:image skipped — falling back to Pixabay")
 
         if img_bytes is None:
-            neutral_fallback = _NEUTRAL_FALLBACK_QUERIES[i] if i in _LOCAL_SLIDE_INDICES else None
-            img_bytes, img_url = _fetch_pexels(query, slide_index=i,
-                                               fallback_query=neutral_fallback,
-                                               used_urls=session_used)
+            img_bytes, img_url = _fetch_pixabay(query, slide_index=i,
+                                                fallback_query=_NEUTRAL_FALLBACK_QUERIES[i],
+                                                used_urls=session_used,
+                                                category=categories[i])
             if img_url:
                 new_urls.add(img_url)
                 session_used.add(img_url)  # prevent reuse within same carousel too
-                source = "pexels"
+                source = "pixabay"
 
         if img_bytes:
             _crop_and_resize(img_bytes, path)
