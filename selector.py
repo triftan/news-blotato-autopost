@@ -24,6 +24,7 @@ LANDMARKS      = _CFG.get("local_landmarks", "KLCC, Putrajaya")
 LOCAL_CONTEXT  = _CFG.get("local_context", "local founders and businesses")
 FLAG_EMOJI     = _CFG.get("flag_emoji", "🇲🇾")
 HASHTAGS       = " ".join(_CFG.get("posting", {}).get("hashtags", ["#AINews"]))
+LOCAL_HASHTAGS = " ".join(_CFG.get("posting", {}).get("local_hashtags", []))
 LOCAL_SHARE    = float(_CFG.get("local_share", 0.2))
 SCORE_MODEL    = _CFG.get("openrouter", {}).get("score_model", "deepseek/deepseek-v4.1-flash")
 WRITE_MODEL    = _CFG.get("openrouter", {}).get("write_model", "deepseek/deepseek-v4.1-flash")
@@ -142,6 +143,7 @@ Writing rules — study these carefully:
   BAD: **"This is a major development for the AI industry."**
 - insight: ONE sentence only. Max 12 words. The single most surprising fact or takeaway. No corporate speak. Numbers preferred.
 - Slide 3 explains why this matters to the reader. If the category is "local", or the story clearly affects {COUNTRY}, name real {COUNTRY} companies, bodies ({GOV_BODIES}), or people affected. For a global story with no real {COUNTRY} link, keep it global. Never invent a local angle.
+- Never use em dashes or en dashes anywhere (captions, headlines, insights). Use a comma, a full stop, or a colon instead.
 - Caption: Start with a provocative 1-line hook. Then 2-3 short lines expanding it. End with Comment {COMMENT_KEYWORD}. Use only these hashtags: {HASHTAGS}
 - Write EXACTLY 8 slides (num 2 through 9). Do NOT write a slide 10 — the CTA is generated automatically.
 - cover_badge: Pick one — BREAKING (major new announcement), LOCAL (story about {COUNTRY}), AI NEWS (global AI), EXCLUSIVE (insider/first), VIRAL (meme/funny).
@@ -160,7 +162,7 @@ Return valid JSON only:
   "cover_subheadline": "AI usage tracking just went physical. And it only costs $32.",
   "cover_badge": "BREAKING",
   "meme_text": "Optional. For meme-worthy stories only (AI behaving weirdly, funny reversals, ironic stats): 1-2 lines of witty commentary shown as a chat bubble on the cover. Write it like a tweet reaction. Leave empty string for straight news.",
-  "caption": "A $32 gadget is now more useful than most $2,000 AI dashboards.\\n\\nHere's what it does — and why developers in {COUNTRY} are already copying it.\\n\\nSwipe to see the full breakdown ➡️\\n\\nComment \\"{COMMENT_KEYWORD}\\" to join {COMMUNITY_NAME} {FLAG_EMOJI}\\n→ {COMMUNITY_URL}\\n\\n{HASHTAGS}",
+  "caption": "A $32 gadget is now more useful than most $2,000 AI dashboards.\\n\\nHere's what it does, and why developers in {COUNTRY} are already copying it.\\n\\nSwipe to see the full breakdown ➡️\\n\\nComment \\"{COMMENT_KEYWORD}\\" to join {COMMUNITY_NAME} {FLAG_EMOJI}\\n→ {COMMUNITY_URL}\\n\\n{HASHTAGS}",
   "cover_image_query": "2-4 literal keywords for the cover photo, e.g. hacker laptop dark",
   "cover_image_category": "computer",
   "cover_image_prompt": "A dramatic, high-quality photographic portrait. Prefer: a well-known tech CEO or entrepreneur relevant to this story (e.g. Sam Altman, Sundar Pichai, Elon Musk, a relevant local founder), OR a cinematic real-world scene (aerial city night, storm clouds, server room blue glow). Full-bleed portrait orientation. No logos, no flat graphics, no text. Dark and bold.",
@@ -291,8 +293,32 @@ def score_stories(stories: list[dict]) -> list[dict]:
     return sorted(stories, key=lambda x: x.get("score", 0), reverse=True)
 
 
-def ensure_caption_cta(caption: str) -> str:
-    """Guarantee the caption ends with the comment keyword, community link, and hashtags."""
+def remove_dashes(text: str) -> str:
+    """Swap em/en dashes for commas so captions and slides read without them."""
+    text = re.sub(r"(\d)\s*[—–]\s*(\d)", r"\1-\2", text or "")  # ranges: 2024–2026 → 2024-2026
+    text = re.sub(r"\s*[—–]\s*", ", ", text)
+    text = re.sub(r",\s*,", ",", text)
+    text = re.sub(r"^,\s*", "", text, flags=re.M)
+    text = re.sub(r",[ \t]*$", "", text, flags=re.M)
+    return re.sub(r",\s*([.!?])", r"\1", text)
+
+
+def _strip_dashes(value):
+    if isinstance(value, str):
+        return remove_dashes(value)
+    if isinstance(value, list):
+        return [_strip_dashes(v) for v in value]
+    if isinstance(value, dict):
+        return {k: _strip_dashes(v) for k, v in value.items()}
+    return value
+
+
+def ensure_caption_cta(caption: str, local: bool = False) -> str:
+    """Guarantee the caption ends with the comment keyword, community link, and hashtags.
+
+    Hashtags are always rebuilt from config: the base set, plus the local
+    hashtags (e.g. #Singapore) only when the story is local.
+    """
     caption = (caption or "").strip()
     body_lines, tags = [], []
     for line in caption.splitlines():
@@ -312,7 +338,7 @@ def ensure_caption_cta(caption: str) -> str:
         joiner = "\n" if len(cta_lines) == 1 and cta_lines[0].startswith("→") else "\n\n"
         body = body + joiner + "\n".join(cta_lines)
 
-    hashtags = " ".join(dict.fromkeys(tags)) or HASHTAGS
+    hashtags = HASHTAGS + (f" {LOCAL_HASHTAGS}" if local and LOCAL_HASHTAGS else "")
     return f"{body}\n\n{hashtags}".strip()
 
 
@@ -332,8 +358,10 @@ def write_carousel(story: dict) -> dict:
     end = text.rfind("}") + 1
     if start == -1 or end == 0:
         raise ValueError(f"[selector] write_carousel parse failed:\n{text[:300]}")
-    carousel = json.loads(text[start:end])
-    carousel["caption"] = ensure_caption_cta(carousel.get("caption", ""))
+    carousel = _strip_dashes(json.loads(text[start:end]))
+    carousel["caption"] = ensure_caption_cta(
+        carousel.get("caption", ""), local=story.get("category") == "local"
+    )
     return carousel
 
 
