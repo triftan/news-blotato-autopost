@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 class ImageGenerationFallbackTests(unittest.TestCase):
     def setUp(self):
-        os.environ.pop("PEXELS_API_KEY", None)
+        os.environ.pop("PIXABAY_API_KEY", None)
         import image_gen
         self.image_gen = importlib.reload(image_gen)
 
@@ -15,10 +15,10 @@ class ImageGenerationFallbackTests(unittest.TestCase):
         self.assertFalse(hasattr(self.image_gen, "GEMINI_API_KEY"))
         self.assertFalse(hasattr(self.image_gen, "_generate_gemini_image"))
 
-    def test_records_gradient_sources_when_pexels_fails(self):
+    def test_records_gradient_sources_when_pixabay_fails(self):
         with tempfile.TemporaryDirectory() as output_dir:
             with (
-                patch.object(self.image_gen, "_fetch_pexels", return_value=(None, "")),
+                patch.object(self.image_gen, "_fetch_pixabay", return_value=(None, "")),
                 patch.object(self.image_gen, "_gradient_fallback") as gradient,
             ):
                 paths, urls, sources = self.image_gen.generate_slide_images({}, output_dir)

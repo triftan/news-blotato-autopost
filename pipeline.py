@@ -1,6 +1,6 @@
 """
 Main pipeline orchestrator:
-  scraper → selector → image_gen → builder → Blotato → logger
+  scraper → selector (OpenRouter) → image_gen (Pixabay) → builder → Buffer → logger
 """
 import argparse
 import json
@@ -31,7 +31,7 @@ def check_visual_quality(image_sources: list[str], dry_run: bool) -> int:
         raise RuntimeError(
             "Visual quality gate blocked publication: "
             f"{gradient_count}/10 slides have no photographic background. "
-            "Configure PEXELS_API_KEY, then run a dry run first."
+            "Configure PIXABAY_API_KEY, then run a dry run first."
         )
     return gradient_count
 
@@ -92,8 +92,8 @@ def write_review_manifest(
 def run(dry_run: bool = False):
     with open("config.json", encoding="utf-8") as config_file:
         cfg = json.load(config_file)
-    account_id = cfg["blotato"]["instagram_account_id"]
-    account_username = cfg["blotato"]["instagram_username"]
+    account_id = cfg["buffer"]["channel_id"]
+    account_username = cfg["buffer"]["instagram_username"]
     run_ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M")
 
     # A fresh template must not spend API credits or post under placeholder brand values.
@@ -105,9 +105,9 @@ def run(dry_run: bool = False):
             return
         sys.exit(1)
 
-    # Fail before scraping, AI calls, and rendering if Blotato is unavailable.
+    # Fail before scraping, AI calls, and rendering if Buffer is unavailable.
     if not dry_run:
-        print("\n── STEP 0: BLOTATO PREFLIGHT ──")
+        print("\n── STEP 0: BUFFER PREFLIGHT ──")
         poster.validate_account(account_id, account_username)
 
     print("\n── STEP 1: SCRAPE ──")
@@ -163,16 +163,16 @@ def run(dry_run: bool = False):
         print(f"\n[pipeline] DRY RUN — skipping post. PNGs at: ~/Downloads/carousels/{run_id}/")
         return
 
-    print("\n── STEP 6: POST VIA BLOTATO ──")
+    print("\n── STEP 6: POST VIA BUFFER ──")
     caption = carousel.get("caption", "")
-    submission_id = poster.run(png_paths, caption, account_id)
+    submission_id = poster.run(png_paths, caption, account_id, run_id)
 
     print("\n── STEP 7: LOG ──")
-    story["blotato_account_id"] = account_id
+    story["buffer_channel_id"] = account_id
     logger.log_posted(story, submission_id, carousel, new_img_urls=new_img_urls)
 
     print(f"\n✓ DONE — Submitted: {story['headline'][:60]}")
-    print(f"  Blotato submission ID: {submission_id}")
+    print(f"  Buffer post ID: {submission_id}")
     print(f"  Slides at: ~/Downloads/carousels/{run_id}/")
 
 

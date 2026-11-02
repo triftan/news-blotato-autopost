@@ -16,7 +16,7 @@ class VisualQualityGateTests(unittest.TestCase):
         self.assertEqual(count, 10)
 
     def test_live_post_allows_up_to_two_gradient_fallbacks(self):
-        sources = ["pexels"] * 8 + ["gradient"] * 2
+        sources = ["pixabay"] * 8 + ["gradient"] * 2
         count = pipeline.check_visual_quality(sources, dry_run=False)
         self.assertEqual(count, 2)
 
@@ -47,7 +47,7 @@ class CarouselFactValidationTests(unittest.TestCase):
                 [str(slide)],
                 {"headline": "Verified story", "url": "https://example.com/story"},
                 {"caption": "Exact approved caption"},
-                ["pexels"],
+                ["pixabay"],
                 "run-123",
             )
             data = json.loads(Path(path).read_text())

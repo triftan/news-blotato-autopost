@@ -5,12 +5,13 @@ No third-party imports, so the GitHub Actions guard can run before pip install.
 from __future__ import annotations
 
 import json
+import re
 import os
 import sys
 from pathlib import Path
 
 MARKERS = (
-    "YOUR_BLOTATO_INSTAGRAM_ACCOUNT_ID",
+    "YOUR_BUFFER_CHANNEL_ID",
     "YOUR_INSTAGRAM_USERNAME",
     "YOUR_BRAND_NAME",
     "YOUR_COMMUNITY_URL",
@@ -19,8 +20,8 @@ MARKERS = (
 )
 
 FIELDS = (
-    ("blotato.instagram_account_id", ("blotato", "instagram_account_id")),
-    ("blotato.instagram_username", ("blotato", "instagram_username")),
+    ("buffer.channel_id", ("buffer", "channel_id")),
+    ("buffer.instagram_username", ("buffer", "instagram_username")),
     ("account_handle", ("account_handle",)),
     ("community_name", ("community_name",)),
     ("community_url", ("community_url",)),
@@ -52,7 +53,7 @@ def placeholder_fields(cfg: dict) -> list[str]:
         if not value or "YOUR_" in value or any(marker in value for marker in MARKERS):
             found.append(label)
             continue
-        if label == "blotato.instagram_account_id" and not value.isdigit():
+        if label == "buffer.channel_id" and not re.fullmatch(r"[0-9a-f]{24}", value):
             found.append(label)
     return found
 
@@ -61,12 +62,12 @@ def friendly_message(fields: list[str]) -> str:
     listed = ", ".join(fields)
     return (
         "config.json still has template placeholders in: "
-        f"{listed}. Open config.json and replace them with your Blotato Instagram "
-        "account id, Instagram username, brand name, handle, community link, and "
+        f"{listed}. Open config.json and replace them with your Buffer Instagram "
+        "channel id, Instagram username, brand name, handle, community link, and "
         "comment keyword. The Malaysia news searches in that file are examples — edit those too. "
-        "Live posting stays off until blotato.instagram_account_id is the numeric id of an "
-        "Instagram account connected in Blotato. If preflight fails after you set an id, "
-        "that id does not match a connected account."
+        "Live posting stays off until buffer.channel_id is the 24-character id of an "
+        "Instagram channel connected in Buffer. If preflight fails after you set an id, "
+        "that id does not match a connected channel."
     )
 
 
@@ -100,7 +101,7 @@ def main() -> int:
         print(message)
         print(
             "Scheduled run skipped. A fresh copy does not post until "
-            "blotato.instagram_account_id is your real Blotato Instagram account id."
+            "every placeholder in config.json is filled in."
         )
         return 0
 

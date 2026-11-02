@@ -9,8 +9,8 @@ READY = {
     "community_name": "Example News",
     "community_url": "example.com/join",
     "comment_keyword": "NEWS",
-    "blotato": {
-        "instagram_account_id": "424242",
+    "buffer": {
+        "channel_id": "6a47686c5ab6d2f1069c7d07",
         "instagram_username": "examplecreator",
     },
 }
@@ -19,18 +19,17 @@ READY = {
 class ConfigCheckTests(unittest.TestCase):
     def test_template_config_on_disk_is_still_a_placeholder(self):
         fields = config_check.placeholder_fields(config_check.load_config())
-        self.assertIn("blotato.instagram_account_id", fields)
         self.assertIn("community_name", fields)
 
-    def test_numeric_account_id_is_ready(self):
+    def test_buffer_channel_id_is_ready(self):
         self.assertEqual(config_check.placeholder_fields(READY), [])
 
-    def test_non_numeric_account_id_blocks_posting(self):
+    def test_malformed_channel_id_blocks_posting(self):
         cfg = {
             **READY,
-            "blotato": {**READY["blotato"], "instagram_account_id": "not-an-id"},
+            "buffer": {**READY["buffer"], "channel_id": "not-an-id"},
         }
-        self.assertIn("blotato.instagram_account_id", config_check.placeholder_fields(cfg))
+        self.assertIn("buffer.channel_id", config_check.placeholder_fields(cfg))
 
     def test_scheduled_fresh_copy_skips_instead_of_failing(self):
         original = os.environ.get("GITHUB_EVENT_NAME")

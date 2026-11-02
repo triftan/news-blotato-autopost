@@ -15,9 +15,13 @@
     "max_hashtags": 5,
     "hashtags": ["#MalaysiaAI", "#AINews", "#ArtificialIntelligence", "#TechNews", "#Malaysia"]
   },
-  "blotato": {
-    "instagram_account_id": "YOUR_BLOTATO_INSTAGRAM_ACCOUNT_ID",
-    "instagram_username": "YOUR_INSTAGRAM_USERNAME"
+  "buffer": {
+    "channel_id": "6a47686c5ab6d2f1069c7d07",
+    "instagram_username": "brandonlee.life"
+  },
+  "openrouter": {
+    "score_model": "anthropic/claude-haiku-5.5",
+    "write_model": "anthropic/claude-sonnet-5.5"
   },
   "google_news_queries": [
     "Malaysia+AI+artificial+intelligence",

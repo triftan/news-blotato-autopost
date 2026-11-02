@@ -21,7 +21,7 @@ def get_posted_urls() -> set:
 
 
 def get_used_img_urls() -> set:
-    """Return all Pexels/og:image URLs used in past posts — to avoid reuse."""
+    """Return all Pixabay/og:image URLs used in past posts — to avoid reuse."""
     return set(_load().get("img_urls", []))
 
 

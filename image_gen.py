@@ -1,4 +1,4 @@
-"""Fetch carousel slide background images from Pexels API — free, real photos."""
+"""Fetch carousel slide background images from Pixabay API — free, real photos."""
 from __future__ import annotations
 import os
 import io
@@ -44,8 +44,6 @@ def _fetch_url_image(url: str) -> bytes | None:
         print(f"[image_gen] og:image download failed: {e}")
         return None
 
-PEXELS_API_KEY = os.environ.get("PEXELS_API_KEY", "")
-
 # 1080x1350 px Instagram portrait (4:5)
 WIDTH, HEIGHT = 1080, 1350
 
@@ -85,7 +83,7 @@ _LOCAL_SLIDE_INDICES = {0, 2, 9}
 
 
 def _prompt_to_query(prompt: str, allow_location: bool = False) -> str:
-    """Trim an image_prompt into a short Pexels-friendly search query.
+    """Trim an image_prompt into a short Pixabay-friendly search query.
 
     By default strips country/location words to avoid wrong-country photo results.
     Set allow_location=True for the cover and the local-angle slides.
@@ -111,50 +109,55 @@ def _prompt_to_query(prompt: str, allow_location: bool = False) -> str:
     return " ".join(filtered[:5])
 
 
-def _fetch_pexels(query: str, slide_index: int, fallback_query: str | None = None,
-                  used_urls: set | None = None) -> tuple[bytes | None, str]:
-    """Call Pexels search API and return (raw image bytes, photo_url), or (None, '').
+def _fetch_pixabay(query: str, slide_index: int, fallback_query: str | None = None,
+                   used_urls: set | None = None) -> tuple[bytes | None, str]:
+    """Call Pixabay search API and return (raw image bytes, photo_url), or (None, '').
 
     Skips photos whose URLs are in used_urls to prevent reuse across posts.
     """
-    if not PEXELS_API_KEY:
+    api_key = os.environ.get("PIXABAY_API_KEY", "").strip()
+    if not api_key:
         return None, ""
 
     def _search(q: str) -> tuple[bytes | None, str]:
         try:
-            # Stay on the first two result pages: deeper Pexels pages often drift
-            # away from the query even when they technically match a keyword.
+            # Stay on the first two result pages: deeper pages drift from the query.
             for page in random.sample(range(1, 3), 2):
                 resp = requests.get(
-                    "https://api.pexels.com/v1/search",
-                    headers={"Authorization": PEXELS_API_KEY},
+                    "https://pixabay.com/api/",
                     params={
-                        "query": q,
-                        "per_page": 15,
+                        "key": api_key,
+                        "q": q[:100],
+                        "image_type": "photo",
+                        "orientation": "vertical",
+                        "safesearch": "true",
+                        "per_page": 20,
                         "page": page,
-                        "orientation": "portrait",
-                        "size": "large",
                     },
                     timeout=15,
                 )
-                resp.raise_for_status()
-                photos = resp.json().get("photos", [])
-                if not photos:
+                if resp.status_code == 400:
+                    # Pixabay returns 400 when the page is past the last result.
                     continue
-                # Shuffle and pick first photo not in used_urls
-                random.shuffle(photos)
-                for photo in photos:
-                    img_url = photo["src"]["large2x"]
-                    if used_urls and img_url in used_urls:
+                resp.raise_for_status()
+                hits = resp.json().get("hits", [])
+                if not hits:
+                    continue
+                random.shuffle(hits)
+                for hit in hits:
+                    img_url = hit.get("largeImageURL") or hit.get("webformatURL")
+                    # Download links rotate per request, so dedupe on the stable page URL.
+                    photo_key = hit.get("pageURL") or img_url
+                    if not img_url or (used_urls and photo_key in used_urls):
                         continue
                     img_resp = requests.get(img_url, timeout=30)
                     img_resp.raise_for_status()
-                    print(f"[image_gen] Pexels: '{q}' (page {page}) → {img_url[:60]}...")
-                    return img_resp.content, img_url
-            print(f"[image_gen] Pexels: no fresh results for '{q}'")
+                    print(f"[image_gen] Pixabay: '{q}' (page {page}) → {photo_key[:60]}...")
+                    return img_resp.content, photo_key
+            print(f"[image_gen] Pixabay: no fresh results for '{q}'")
             return None, ""
         except Exception as e:
-            print(f"[image_gen] Pexels error for '{q}': {e}")
+            print(f"[image_gen] Pixabay error for '{q}': {e}")
             return None, ""
 
     result, url = _search(query)
@@ -186,7 +189,7 @@ def _crop_and_resize(img_bytes: bytes, path: str):
 
 
 def _gradient_fallback(path: str, slide_index: int):
-    """Dark gradient fallback if Pexels unavailable."""
+    """Dark gradient fallback if Pixabay unavailable."""
     palettes = [
         ((10, 10, 30), (25, 20, 60)),
         ((5, 20, 25), (10, 45, 55)),
@@ -213,16 +216,16 @@ def _gradient_fallback(path: str, slide_index: int):
 
 def generate_slide_images(carousel: dict, output_dir: str, og_image_url: str = "",
                           used_img_urls: set | None = None) -> tuple[list[str], set, list[str]]:
-    """Fetch 10 Pexels photos (or gradient fallback) for the carousel slides.
+    """Fetch 10 Pixabay photos (or gradient fallback) for the carousel slides.
 
     Returns (paths, new_used_urls, sources). Sources records whether each slide used
-    an article image, Pexels, or the non-photographic gradient fallback.
+    an article image, Pixabay, or the non-photographic gradient fallback.
     """
     Path(output_dir).mkdir(parents=True, exist_ok=True)
     paths = []
     session_used = set(used_img_urls or set())  # running set for this session too
 
-    # Build Pexels queries.
+    # Build Pixabay queries.
     queries = []
 
     cover_prompt = carousel.get("cover_image_prompt", "")
@@ -261,17 +264,17 @@ def generate_slide_images(carousel: dict, output_dir: str, og_image_url: str = "
                 new_urls.add(og_image_url)
                 source = "article"
             else:
-                print("[image_gen] og:image skipped — falling back to Pexels")
+                print("[image_gen] og:image skipped — falling back to Pixabay")
 
         if img_bytes is None:
             neutral_fallback = _NEUTRAL_FALLBACK_QUERIES[i] if i in _LOCAL_SLIDE_INDICES else None
-            img_bytes, img_url = _fetch_pexels(query, slide_index=i,
+            img_bytes, img_url = _fetch_pixabay(query, slide_index=i,
                                                fallback_query=neutral_fallback,
                                                used_urls=session_used)
             if img_url:
                 new_urls.add(img_url)
                 session_used.add(img_url)  # prevent reuse within same carousel too
-                source = "pexels"
+                source = "pixabay"
 
         if img_bytes:
             _crop_and_resize(img_bytes, path)

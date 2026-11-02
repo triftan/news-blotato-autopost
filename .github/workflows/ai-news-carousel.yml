@@ -51,9 +51,10 @@ jobs:
         if: ${{ steps.guard.outcome == 'success' && steps.guard.outputs.skip != 'true' }}
         run: python pipeline.py ${{ github.event.inputs.dry_run == 'true' && '--dry-run' || '' }}
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          BLOTATO_API_KEY: ${{ secrets.BLOTATO_API_KEY }}
-          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
+          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # hosts slides on the media branch for Buffer
 
       - name: Commit posted_urls.json
         if: ${{ steps.guard.outcome == 'success' && steps.guard.outputs.skip != 'true' && github.event.inputs.dry_run != 'true' }}

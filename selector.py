@@ -1,11 +1,11 @@
-"""Use Claude API to score stories and write 10-slide carousel content."""
+"""Use an LLM via OpenRouter to score stories and write 10-slide carousel content."""
 import os
 import json
 import re
 from pathlib import Path
-import anthropic
+import requests
 
-client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
+OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 # Load country config
 _cfg_path = Path(__file__).parent / "config.json"
@@ -23,6 +23,35 @@ LANDMARKS      = _CFG.get("local_landmarks", "KLCC, Putrajaya")
 LOCAL_CONTEXT  = _CFG.get("local_context", "local founders and businesses")
 FLAG_EMOJI     = _CFG.get("flag_emoji", "🇲🇾")
 HASHTAGS       = " ".join(_CFG.get("posting", {}).get("hashtags", ["#AINews"]))
+SCORE_MODEL    = _CFG.get("openrouter", {}).get("score_model", "anthropic/claude-haiku-5.5")
+WRITE_MODEL    = _CFG.get("openrouter", {}).get("write_model", "anthropic/claude-sonnet-5.5")
+
+
+def _chat(model: str, prompt: str, max_tokens: int) -> str:
+    """Send one prompt to OpenRouter and return the reply text."""
+    api_key = os.environ.get("OPENROUTER_API_KEY", "").strip()
+    if not api_key:
+        raise RuntimeError("OPENROUTER_API_KEY is missing or empty")
+    resp = requests.post(
+        OPENROUTER_URL,
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+            "X-Title": "news-blotato-autopost",
+        },
+        json={
+            "model": model,
+            "max_tokens": max_tokens,
+            "messages": [{"role": "user", "content": prompt}],
+        },
+        timeout=180,
+    )
+    if resp.status_code != 200:
+        raise RuntimeError(f"OpenRouter {model} failed (HTTP {resp.status_code}): {resp.text[:300]}")
+    body = resp.json()
+    if body.get("error"):
+        raise RuntimeError(f"OpenRouter {model} error: {body['error']}")
+    return (body["choices"][0]["message"].get("content") or "").strip()
 
 SCORE_PROMPT = f"""You are a viral social media editor for {ACCOUNT_HANDLE} — {COUNTRY}'s #1 AI news hub on Instagram.
 
@@ -45,7 +74,7 @@ Weighted scoring factors:
    - GitHub stars 1000+ = 8, 500+ = 6
    - No signals = 3
 3. Shock/novelty (2x): Surprising stat, contrarian take, controversy, "nobody is talking about this"
-4. Visual drama (1x): Can this story use strong editorial photography from Pexels?
+4. Visual drama (1x): Can this story use strong editorial stock photography from Pixabay?
 5. Community bait (1x): Will {COUNTRY} readers comment/share/tag friends?
 
 Also assign the best hook angle (1-8) for each story:
@@ -215,12 +244,7 @@ def score_stories(stories: list[dict]) -> list[dict]:
         for i, s in enumerate(stories)
     )
 
-    resp = client.messages.create(
-        model="claude-haiku-4-5-20251001",
-        max_tokens=8000,
-        messages=[{"role": "user", "content": SCORE_PROMPT.replace("{stories}", stories_text)}]
-    )
-    text = resp.content[0].text.strip()
+    text = _chat(SCORE_MODEL, SCORE_PROMPT.replace("{stories}", stories_text), 8000)
     # Strip markdown code fences if present
     text = re.sub(r"```(?:json)?\s*", "", text).strip()
     # Extract JSON array
@@ -254,12 +278,7 @@ def write_carousel(story: dict) -> dict:
         .replace("{category}", story.get("category", "global_ai"))
     )
 
-    resp = client.messages.create(
-        model="claude-sonnet-4-6",
-        max_tokens=4000,
-        messages=[{"role": "user", "content": prompt}]
-    )
-    text = resp.content[0].text.strip()
+    text = _chat(WRITE_MODEL, prompt, 4000)
     # Strip markdown code fences
     text = re.sub(r"```(?:json)?\s*", "", text).strip()
     start = text.find("{")
