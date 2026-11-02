@@ -48,20 +48,20 @@ def _fetch_url_image(url: str) -> bytes | None:
 WIDTH, HEIGHT = 1080, 1350
 
 # Default search queries per slide position (used as fallback if no image_prompt).
-# These match the Malaysia examples in config.json. Change the city names with your own.
+# Local slides use Singapore scenes. Change the city names to match config.json.
 # Slides 1, 3, and 10 try a local query first, then fall back to a neutral one.
 # Queries chosen for cinematic drama — bold, moody, visually striking on Instagram
 _DEFAULT_QUERIES = [
-    "Kuala Lumpur KLCC night aerial",           # slide 1  cover  (MY-specific)
+    "Singapore Marina Bay night aerial",        # slide 1  cover  (local)
     "server room blue glow technology dark",    # slide 2  WHAT HAPPENED
-    "Kuala Lumpur skyline golden sunset",       # slide 3  MY angle (MY-specific)
+    "Singapore skyline golden sunset",          # slide 3  why it matters (local)
     "rain window city lights bokeh night",      # slide 4  THE NUMBER
     "silhouette dramatic spotlight empty stage",# slide 5  MOST PEOPLE DON'T KNOW
     "speaker stage spotlight crowd dark",       # slide 6  EXPERT TAKE
     "light trail highway night long exposure",  # slide 7  HOW WE GOT HERE
     "person laptop night window city view",     # slide 8  WHAT TO DO NOW
     "storm clouds lightning dramatic dark sky", # slide 9  WATCH OUT FOR
-    "Kuala Lumpur skyline night city lights",   # slide 10 CTA (MY-specific)
+    "Singapore skyline night city lights",      # slide 10 CTA (local)
 ]
 
 # Neutral fallback queries used when a local search returns no results
@@ -95,7 +95,7 @@ def _prompt_to_query(prompt: str, allow_location: bool = False) -> str:
         "with", "and", "the", "for", "a", "an", "in", "of", "at", "on",
         "9:16", "3:4", "full", "side", "view",
     }
-    # Strip country/place names unless this is a Malaysia-specific slide
+    # Strip country/place names unless this is a local (country-specific) slide
     location_words = {
         "singapore", "malaysia", "america", "american", "usa", "us",
         "china", "chinese", "india", "indian", "australia", "australian",

@@ -9,7 +9,8 @@ from bs4 import BeautifulSoup
 AI_KEYWORDS = [
     "ai", "llm", "gpt", "claude", "gemini", "anthropic", "openai", "machine learning",
     "deep learning", "neural", "transformer", "diffusion", "chatbot", "model", "inference",
-    "agent", "rag", "fine-tun", "malaysia", "mdec", "naio", "mosti", "data centre", "data center",
+    "agent", "rag", "fine-tun", "data centre", "data center", "deepfake", "robot", "humanoid",
+    "jailbreak", "hack", "breach", "exploit", "quantum", "breakthrough", "chatgpt", "nvidia",
 ]
 
 def _is_ai_relevant(text: str) -> bool:
@@ -72,7 +73,7 @@ def fetch_hackernews(min_score: int = 150, max_stories: int = 30) -> list[dict]:
 def fetch_reddit(subreddits: list[str] = None, min_score: int = 60) -> list[dict]:
     """Fetch hot Reddit posts — no auth needed via JSON API."""
     if subreddits is None:
-        subreddits = ["MachineLearning", "LocalLLaMA", "artificial", "Malaysia"]
+        subreddits = ["MachineLearning", "LocalLLaMA", "artificial"]
 
     stories = []
     # Reddit blocks generic bots — use a browser-like user agent
@@ -99,7 +100,7 @@ def fetch_reddit(subreddits: list[str] = None, min_score: int = 60) -> list[dict
                 title = p.get("title", "")
                 if score < min_score:
                     continue
-                if sub not in ("malaysia",) and not _is_ai_relevant(title):
+                if not _is_ai_relevant(title):
                     continue
                 created = datetime.fromtimestamp(p.get("created_utc", 0), tz=timezone.utc)
                 if created < cutoff:
@@ -113,7 +114,7 @@ def fetch_reddit(subreddits: list[str] = None, min_score: int = 60) -> list[dict
                     "url": link,
                     "source": sub,
                     "published_at": created.isoformat(),
-                    "category": "malaysia_local" if sub == "malaysia" else "global_ai",
+                    "category": "local" if sub.lower() == _local_subreddit() else "global_ai",
                     "hn_score": 0,
                     "reddit_score": score,
                     "reddit_comments": p.get("num_comments", 0),
@@ -292,11 +293,23 @@ def enrich_with_text(stories: list[dict]) -> list[dict]:
     return stories
 
 
+def _load_cfg() -> dict:
+    with open("config.json") as f:
+        return json.load(f)
+
+
+def _local_subreddit() -> str:
+    return str(_load_cfg().get("country", "")).lower().replace(" ", "")
+
+
 def _categorise(query: str) -> str:
-    malaysia_keywords = ["malaysia", "mdec", "naio", "mosti", "klcc", "putrajaya", "penang", "johor"]
-    q = query.lower()
-    if any(k in q for k in malaysia_keywords):
-        return "malaysia_local"
+    """Tag a Google News query as local when it mentions the configured country."""
+    cfg = _load_cfg()
+    keywords = [k.lower() for k in cfg.get("local_keywords", [])]
+    keywords.append(str(cfg.get("country", "")).lower())
+    q = query.lower().replace("+", " ")
+    if any(k.strip() and k.strip() in q for k in keywords):
+        return "local"
     return "global_ai"
 
 
@@ -317,7 +330,7 @@ def run() -> list[dict]:
 
     all_stories = []
 
-    # Tier 1 — Malaysian local (Google News)
+    # Tier 1 — Google News (global + local queries from config.json)
     queries = cfg["google_news_queries"]
     print(f"[scraper] Google News: {len(queries)} queries...")
     gn = fetch_google_news(queries)
@@ -331,9 +344,9 @@ def run() -> list[dict]:
     # Tier 2 — HackerNews (pre-validated by community)
     all_stories.extend(fetch_hackernews(min_score=150))
 
-    # Tier 3 — Reddit hot AI subs
+    # Tier 3 — Reddit hot posts (AI + viral tech subs, plus the local country sub)
     all_stories.extend(fetch_reddit(
-        subreddits=["MachineLearning", "LocalLLaMA", "artificial", "malaysia"],
+        subreddits=cfg.get("subreddits", ["MachineLearning", "LocalLLaMA", "artificial"]),
         min_score=60
     ))
 

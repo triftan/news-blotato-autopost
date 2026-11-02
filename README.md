@@ -57,7 +57,9 @@ Open `config.json` and replace every value that contains `YOUR_`:
 - `buffer.instagram_username` — the Instagram username as Buffer shows it, without the `@`.
 - `account_handle`, `community_name`, `community_url`, and `comment_keyword` — how the slides and caption name you, and the word people comment to join.
 - `posting.hashtags` — up to five hashtags. The poster keeps only the first five.
-- `google_news_queries` — the Google News searches. The Malaysia queries in the file are examples. Change the country, city, currency, landmarks, and government names in the same file if you cover somewhere else.
+- `google_news_queries` and `subreddits` — what the bot searches. The file ships with 16 global queries (AI news, viral, hacks, discoveries, controversy) and 4 Singapore queries.
+- `local_share` — how often the post leads with a local story. `0.2` means about 20% Singapore and 80% global.
+- `country`, `local_keywords`, `government_bodies`, `local_landmarks` — the local market. Change these together if you cover somewhere else.
 
 Replace `logo.png` with a square image of your own logo. A simple PNG or the existing filename is enough. The circle that says LOGO is only a placeholder.
 
@@ -89,7 +91,7 @@ The schedule is in `.github/workflows/ai-news-carousel.yml`:
 - cron: '0 3 * * *'
 ```
 
-GitHub cron is always **UTC**, not your local time. `0 3 * * *` means minute 0 of hour 3, every day: **03:00 UTC**. That is 11:00 in Malaysia (UTC+8).
+GitHub cron is always **UTC**, not your local time. `0 3 * * *` means minute 0 of hour 3, every day: **03:00 UTC**. That is 11:00 in Singapore (UTC+8).
 
 Edit the first number for the minute and the second number for the hour. `30 15 * * *` is 15:30 UTC. The workflow file has a short comment next to the line. After you commit the change, the next run uses the new time. GitHub can start a scheduled job a few minutes late when Actions is busy.
 

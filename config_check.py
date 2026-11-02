@@ -64,7 +64,7 @@ def friendly_message(fields: list[str]) -> str:
         "config.json still has template placeholders in: "
         f"{listed}. Open config.json and replace them with your Buffer Instagram "
         "channel id, Instagram username, brand name, handle, community link, and "
-        "comment keyword. The Malaysia news searches in that file are examples — edit those too. "
+        "comment keyword. The news searches live in google_news_queries and subreddits. "
         "Live posting stays off until buffer.channel_id is the 24-character id of an "
         "Instagram channel connected in Buffer. If preflight fails after you set an id, "
         "that id does not match a connected channel."

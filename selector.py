@@ -1,6 +1,7 @@
 """Use an LLM via OpenRouter to score stories and write 10-slide carousel content."""
 import os
 import json
+import random
 import re
 from pathlib import Path
 import requests
@@ -12,7 +13,7 @@ _cfg_path = Path(__file__).parent / "config.json"
 with open(_cfg_path) as f:
     _CFG = json.load(f)
 
-COUNTRY        = _CFG.get("country", "Malaysia")
+COUNTRY        = _CFG.get("country", "Singapore")
 ACCOUNT_HANDLE = _CFG.get("account_handle", "@YOUR_INSTAGRAM_HANDLE")
 COMMUNITY_NAME = _CFG.get("community_name", "YOUR_BRAND_NAME")
 COMMUNITY_URL  = _CFG.get("community_url", "YOUR_COMMUNITY_URL")
@@ -23,6 +24,7 @@ LANDMARKS      = _CFG.get("local_landmarks", "KLCC, Putrajaya")
 LOCAL_CONTEXT  = _CFG.get("local_context", "local founders and businesses")
 FLAG_EMOJI     = _CFG.get("flag_emoji", "🇲🇾")
 HASHTAGS       = " ".join(_CFG.get("posting", {}).get("hashtags", ["#AINews"]))
+LOCAL_SHARE    = float(_CFG.get("local_share", 0.2))
 SCORE_MODEL    = _CFG.get("openrouter", {}).get("score_model", "anthropic/claude-haiku-5.5")
 WRITE_MODEL    = _CFG.get("openrouter", {}).get("write_model", "anthropic/claude-sonnet-5.5")
 
@@ -53,40 +55,38 @@ def _chat(model: str, prompt: str, max_tokens: int) -> str:
         raise RuntimeError(f"OpenRouter {model} error: {body['error']}")
     return (body["choices"][0]["message"].get("content") or "").strip()
 
-SCORE_PROMPT = f"""You are a viral social media editor for {ACCOUNT_HANDLE} — {COUNTRY}'s #1 AI news hub on Instagram.
+SCORE_PROMPT = f"""You are a viral social media editor for {ACCOUNT_HANDLE}, a global AI news page on Instagram run from {COUNTRY}.
+
+The audience wants: big AI news, shocking or viral stories, hacks and exploits (security hacks, jailbreaks, and practical AI tricks), surprising discoveries, and controversy.
 
 Score each story 0-100 for Instagram carousel potential. Use this rubric:
-- 90-100: Groundbreaking — major breakthrough, landmark announcement, {COUNTRY}-specific shocking news
-- 70-89: High value — novel AI tool/model, clear {COUNTRY} angle, community-validated (high HN/Reddit score)
-- 50-69: Interesting — incremental AI news, can be localised for {COUNTRY}
-- 30-49: Low priority — minor update, promotional
+- 90-100: Jaw-dropping — major AI breakthrough or launch, scandal, viral moment, shocking discovery, serious hack
+- 70-89: High value — controversial debate, surprising study, useful AI hack/trick, community-validated (high HN/Reddit score)
+- 50-69: Interesting — solid AI news with a clear hook
+- 30-49: Low priority — minor update, promotional, dry corporate news
 - 0-29: Skip — off-topic, noise, already covered
 
 Weighted scoring factors:
-1. {COUNTRY} relevance (3x weight):
-   - 10: Story IS about {COUNTRY} ({GOV_BODIES}, local politician, local startup, {LANDMARKS})
-   - 7: Regional story with direct {COUNTRY} impact
-   - 5: Global with obvious "what this means for {COUNTRY}" angle
-   - 2: Pure global, no local hook
+1. Shock / controversy / virality (3x weight): scandal, backlash, lawsuit, "this is insane", contrarian take, something people will argue about in the comments
 2. Community validation (2x weight) — USE THE SIGNALS PROVIDED:
    - HN score 500+ = score 10, 300+ = 8, 150+ = 6
    - Reddit score 500+ = 10, 200+ = 8, 60+ = 5
    - GitHub stars 1000+ = 8, 500+ = 6
    - No signals = 3
-3. Shock/novelty (2x): Surprising stat, contrarian take, controversy, "nobody is talking about this"
+3. Novelty / discovery (2x): Surprising stat, first-ever, new capability, a hack or trick most people don't know
 4. Visual drama (1x): Can this story use strong editorial stock photography from Pixabay?
-5. Community bait (1x): Will {COUNTRY} readers comment/share/tag friends?
+5. Shareability (1x): Will readers comment, share, or tag friends? Global stories score just as high as {COUNTRY} ones.
 
 Also assign the best hook angle (1-8) for each story:
 1=Against The Grain, 2=Controversial, 3=Trending, 4=Celebrity, 5=Small Change Big Difference, 6=Well Known Little Understood, 7=Uncommon/Weird, 8=Numbers
 
 Return ONLY a compact JSON array — no explanation outside the array, no markdown fences. Keep reason under 8 words.
-[{{"index": 0, "score": 85, "category": "local", "angle": 2, "reason": "shocking local data centre deal"}}]
+[{{"index": 0, "score": 85, "angle": 2, "reason": "AI deepfake scam goes viral"}}]
 
 Stories (with community signals):
 {{stories}}"""
 
-WRITE_PROMPT = f"""You are a viral carousel writer for {ACCOUNT_HANDLE} — {COUNTRY}'s #1 AI news hub on Instagram.
+WRITE_PROMPT = f"""You are a viral carousel writer for {ACCOUNT_HANDLE}, a global AI news page on Instagram run from {COUNTRY}. The audience loves big AI news, shocking viral stories, hacks, discoveries, and controversy.
 
 Write a 10-slide Instagram carousel for this story.
 
@@ -141,7 +141,7 @@ Writing rules — study these carefully:
   GOOD: **"This model runs 48x faster than GPT-4 — on a single laptop GPU."**
   BAD: **"This is a major development for the AI industry."**
 - insight: ONE sentence only. Max 12 words. The single most surprising fact or takeaway. No corporate speak. Numbers preferred.
-- Slide 3 MUST localise to {COUNTRY}. Name real companies, government bodies ({GOV_BODIES}), or professionals affected.
+- Slide 3 explains why this matters to the reader. If the category is "local", or the story clearly affects {COUNTRY}, name real {COUNTRY} companies, bodies ({GOV_BODIES}), or people affected. For a global story with no real {COUNTRY} link, keep it global. Never invent a local angle.
 - Caption: Start with a provocative 1-line hook. Then 2-3 short lines expanding it. End with Comment {COMMENT_KEYWORD}. Use only these hashtags: {HASHTAGS}
 - Write EXACTLY 8 slides (num 2 through 9). Do NOT write a slide 10 — the CTA is generated automatically.
 - cover_badge: Pick one — BREAKING (major new announcement), LOCAL (story about {COUNTRY}), AI NEWS (global AI), EXCLUSIVE (insider/first), VIRAL (meme/funny).
@@ -157,7 +157,7 @@ Return valid JSON only:
   "cover_badge": "BREAKING",
   "meme_text": "Optional. For meme-worthy stories only (AI behaving weirdly, funny reversals, ironic stats): 1-2 lines of witty commentary shown as a chat bubble on the cover. Write it like a tweet reaction. Leave empty string for straight news.",
   "caption": "A $32 gadget is now more useful than most $2,000 AI dashboards.\\n\\nHere's what it does — and why developers in {COUNTRY} are already copying it.\\n\\nSwipe to see the full breakdown ➡️\\n\\nComment \\"{COMMENT_KEYWORD}\\" to join {COMMUNITY_NAME} {FLAG_EMOJI}\\n→ {COMMUNITY_URL}\\n\\n{HASHTAGS}",
-  "cover_image_prompt": "A dramatic, high-quality photographic portrait. Prefer: a well-known tech CEO or entrepreneur relevant to this story (e.g. Sam Altman, Sundar Pichai, Elon Musk, local Malaysian entrepreneur), OR a cinematic real-world scene (aerial city night, storm clouds, server room blue glow). Full-bleed portrait orientation. No logos, no flat graphics, no text. Dark and bold.",
+  "cover_image_prompt": "A dramatic, high-quality photographic portrait. Prefer: a well-known tech CEO or entrepreneur relevant to this story (e.g. Sam Altman, Sundar Pichai, Elon Musk, a relevant local founder), OR a cinematic real-world scene (aerial city night, storm clouds, server room blue glow). Full-bleed portrait orientation. No logos, no flat graphics, no text. Dark and bold.",
   "slides": [
     {{
       "num": 2,
@@ -168,10 +168,10 @@ Return valid JSON only:
     }},
     {{
       "num": 3,
-      "label": "{COUNTRY} ANGLE",
-      "headline": "Write how this directly affects someone living and working in {COUNTRY}",
-      "insight": "One sentence, max 12 words. Direct impact on {COUNTRY} professionals or businesses — with a number if possible.",
-      "image_prompt": "A recognisable landmark in {COUNTRY} ({LANDMARKS}), dark moody, no text"
+      "label": "WHY IT MATTERS",
+      "headline": "Write how this directly affects the reader (use the {COUNTRY} angle only if the story really has one)",
+      "insight": "One sentence, max 12 words. Direct impact on people or businesses — with a number if possible.",
+      "image_prompt": "City skyline at night, dark moody, no text (a {COUNTRY} landmark such as {LANDMARKS} only for local stories)"
     }},
     {{
       "num": 4,
@@ -204,14 +204,14 @@ Return valid JSON only:
     {{
       "num": 8,
       "label": "WHAT TO DO NOW",
-      "headline": "Write a specific actionable move someone in {COUNTRY} can take today",
-      "insight": "One sentence, max 12 words. The one thing early movers in {COUNTRY} are doing right now.",
+      "headline": "Write a specific actionable move or hack the reader can use today",
+      "insight": "One sentence, max 12 words. The one thing early movers are doing right now.",
       "image_prompt": "Person working on laptop at night, city lights, focused, no text"
     }},
     {{
       "num": 9,
       "label": "WATCH OUT FOR",
-      "headline": "Write the specific trap or overhyped claim people in {COUNTRY} are falling for",
+      "headline": "Write the specific trap, risk, or overhyped claim people are falling for",
       "insight": "One sentence, max 12 words. The exact thing not worth your time or money right now.",
       "image_prompt": "Warning or caution concept, dramatic shadows, no text"
     }}
@@ -294,11 +294,10 @@ def run(stories: list[dict], posted_urls: set) -> tuple[dict, dict]:
     fresh = [s for s in stories if s["url"] not in posted_urls]
     print(f"[selector] {len(fresh)} fresh stories to score (removed {len(stories)-len(fresh)} already posted)")
 
-    # Block content irrelevant to Malaysian audience
+    # Block content irrelevant to this audience
     _blocklist = [
         "anna's archive", "anna archive", "sci-hub", "libgen",
         "piracy", "torrent", "warez", "jailbreak iphone",
-        "us politics", "trump", "congress", "senate bill",
         "nfl", "nba", "premier league", "cricket",
     ]
     before = len(fresh)
@@ -308,11 +307,15 @@ def run(stories: list[dict], posted_urls: set) -> tuple[dict, dict]:
 
     scored = score_stories(fresh)
 
-    # Pick best Malaysia local + best global as primary picks
-    local = next((s for s in scored if s.get("category") == "malaysia_local"), None)
-    global_ = next((s for s in scored if s.get("category") != "malaysia_local"), None)
+    # Pick the best local and best global story, then order them so roughly
+    # LOCAL_SHARE of posts lead with the local story (default 20% local, 80% global).
+    local = next((s for s in scored if s.get("category") == "local"), None)
+    global_ = next((s for s in scored if s.get("category") != "local"), None)
 
-    picks = [s for s in [local, global_] if s][:2]
+    lead_local = random.random() < LOCAL_SHARE
+    ordered = [local, global_] if lead_local else [global_, local]
+    print(f"[selector] Today's lead: {'local' if lead_local else 'global'} (local_share={LOCAL_SHARE})")
+    picks = [s for s in ordered if s][:2]
     if not picks:
         picks = scored[:2]
 

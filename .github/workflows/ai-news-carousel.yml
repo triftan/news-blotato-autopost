@@ -2,7 +2,7 @@ name: AI News Carousel
 
 on:
   schedule:
-    # 03:00 UTC every day. That is 11:00 in Malaysia (UTC+8).
+    # 03:00 UTC every day. That is 11:00 in Singapore (UTC+8).
     # Change the hour and minute here if you want a different posting time.
     - cron: '0 3 * * *'
   workflow_dispatch:
