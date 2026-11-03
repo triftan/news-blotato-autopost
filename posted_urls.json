@@ -3,7 +3,8 @@
     "https://www.businesstimes.com.sg/international/north-koreas-hackers-supercharge-crypto-heists-ai-skills",
     "https://techcrunch.com/2026/10/25/ai-delivers-zero-financial-payoff-to-most-companies-according-to-apollo-economist/",
     "https://www.straitstimes.com/business/singapore-manufacturers-stay-upbeat-on-ai-demand-despite-geopolitical-clouds",
-    "https://www.straitstimes.com/tech/fixing-the-bottom-rung-fresh-grads-urged-to-use-critique-ai-to-get-a-leg-up-in-employment"
+    "https://www.straitstimes.com/tech/fixing-the-bottom-rung-fresh-grads-urged-to-use-critique-ai-to-get-a-leg-up-in-employment",
+    "https://www.cnbc.com/2026/11/02/anthropic-ant-s-1-quarter-financials.html"
   ],
   "posts": [],
   "img_urls": [],
@@ -11,7 +12,8 @@
     "NUMBERS",
     "AGAINST THE GRAIN",
     "NUMBERS",
-    "AGAINST THE GRAIN"
+    "AGAINST THE GRAIN",
+    "CONTROVERSIAL"
   ],
   "topic_history": [
     {
@@ -29,6 +31,10 @@
     {
       "headline": "Fixing the 'bottom rung': Singapore fresh grads urged to use and critique AI to get hired",
       "date": "2026-11-06T03:00:00+00:00"
+    },
+    {
+      "headline": "Anthropic reports $17B in Q3 revenue and a $23.29B loss, $895B commitments in revised S-1 (IPO filing)",
+      "date": "2026-11-07T03:00:00+00:00"
     }
   ]
 }
