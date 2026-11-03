@@ -114,5 +114,27 @@ class JsonAndFallbackTests(unittest.TestCase):
         self.assertIn("newest first: NUMBERS, CONTROVERSIAL", prompt)
 
 
+    def test_stories_about_recent_topics_are_skipped(self):
+        from unittest.mock import patch
+        import json as _json
+        stories = [
+            {"headline": "BBC: Binance users withdraw $3.6bn", "url": "a", "category": "global_ai", "source": "BBC", "raw_text": "x" * 700},
+            {"headline": "Robots start working on their own", "url": "b", "category": "global_ai", "source": "X", "raw_text": "x" * 700},
+        ]
+        scores = _json.dumps([
+            {"index": 0, "score": 95, "angle": 8, "same_as_recent": True},
+            {"index": 1, "score": 70, "angle": 7, "same_as_recent": False},
+        ])
+        good = {"caption": "c", "slides": [{}]}
+        with patch.object(selector, "_chat", return_value=scores) as chat, \
+             patch.object(selector, "write_carousel", return_value=good), \
+             patch("logger.get_recent_topics", return_value=["North Korea Binance hack"]):
+            results = selector.run(stories, set(), extra_topics=["Queued: crypto heist"])
+        self.assertEqual(results[0][0]["url"], "b")
+        prompt = chat.call_args.args[1]
+        self.assertIn("- North Korea Binance hack", prompt)
+        self.assertIn("- Queued: crypto heist", prompt)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -1,7 +1,7 @@
 """Track posted stories in posted_urls.json to avoid duplicates."""
 from __future__ import annotations
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 _LOG_FILE = Path(__file__).parent / "posted_urls.json"
@@ -23,6 +23,22 @@ def get_posted_urls() -> set:
 def get_used_img_urls() -> set:
     """Return all Pixabay/og:image URLs used in past posts — to avoid reuse."""
     return set(_load().get("img_urls", []))
+
+
+def get_recent_topics(days: int = 7) -> list[str]:
+    """Headlines of stories posted (or queued) in the last `days` days."""
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+    out = []
+    for item in _load().get("topic_history", []):
+        try:
+            when = datetime.fromisoformat(item["date"])
+        except Exception:
+            continue
+        if when.tzinfo is None:
+            when = when.replace(tzinfo=timezone.utc)
+        if when >= cutoff:
+            out.append(item.get("headline", ""))
+    return [h for h in out if h]
 
 
 def get_recent_angles(n: int = 3) -> list[str]:
@@ -63,6 +79,11 @@ def log_posted(story: dict, ig_post_id: str, carousel: dict, new_img_urls: set |
     for u in (new_img_urls or set()):
         if u not in data["img_urls"]:
             data["img_urls"].append(u)
+
+    data.setdefault("topic_history", []).append({
+        "headline": story["headline"][:140],
+        "date": datetime.now(timezone.utc).isoformat(),
+    })
 
     angle = str(carousel.get("angle_name") or "").strip().upper()
     if angle:

@@ -109,8 +109,13 @@ Weighted scoring factors:
 Also assign the best hook angle (1-8) for each story:
 1=Against The Grain, 2=Controversial, 3=Trending, 4=Celebrity, 5=Small Change Big Difference, 6=Well Known Little Understood, 7=Uncommon/Weird, 8=Numbers
 
-Return ONLY a compact JSON array — no explanation outside the array, no markdown fences. Keep reason under 8 words.
-[{{"index": 0, "score": 85, "angle": 2, "reason": "AI deepfake scam goes viral"}}]
+Also mark "same_as_recent": true when a story covers the SAME event, incident, announcement, or ongoing saga as any recently posted story below (for example a different outlet's article about the same hack, lawsuit, launch, or deal). Different stories that merely share a broad theme (two unrelated AI job stories) are not the same.
+
+Recently posted stories (last 7 days):
+{{recent_topics}}
+
+Return ONLY a compact JSON array, no explanation outside the array, no markdown fences. Keep reason under 8 words.
+[{{"index": 0, "score": 85, "angle": 2, "same_as_recent": false, "reason": "AI deepfake scam goes viral"}}]
 
 Stories (with community signals):
 {{stories}}"""
@@ -299,7 +304,7 @@ Full text: {{raw_text}}
 Category: {{category}}"""
 
 
-def score_stories(stories: list[dict]) -> list[dict]:
+def score_stories(stories: list[dict], recent_topics: list[str] | None = None) -> list[dict]:
     """Score all stories and return sorted list."""
     def _signal_str(s: dict) -> str:
         parts = []
@@ -317,7 +322,9 @@ def score_stories(stories: list[dict]) -> list[dict]:
     )
 
     try:
-        text = _chat(SCORE_MODEL, SCORE_PROMPT.replace("{stories}", stories_text), 8000)
+        topics_text = "\n".join(f"- {t}" for t in (recent_topics or [])) or "- none"
+        prompt = SCORE_PROMPT.replace("{recent_topics}", topics_text).replace("{stories}", stories_text)
+        text = _chat(SCORE_MODEL, prompt, 8000)
         scores = _parse_json(text, "[")
     except Exception as e:
         print(f"[selector] Score step failed ({e}); using default scores")
@@ -332,6 +339,7 @@ def score_stories(stories: list[dict]) -> list[dict]:
             stories[idx]["score"] = s["score"]
             stories[idx]["score_reason"] = s.get("reason", "")
             stories[idx]["suggested_angle"] = s.get("angle", 3)
+            stories[idx]["same_as_recent"] = bool(s.get("same_as_recent"))
 
     # Thin stories (paywall, no article text) drop down the list.
     for s in stories:
@@ -421,7 +429,8 @@ def write_carousel(story: dict, recent_angles: list[str] | None = None) -> dict:
     return carousel
 
 
-def run(stories: list[dict], posted_urls: set, force_local: bool = False) -> tuple[dict, dict]:
+def run(stories: list[dict], posted_urls: set, force_local: bool = False,
+        extra_topics: list[str] | None = None) -> tuple[dict, dict]:
     """Select top stories and write carousels. Retries next story if write fails."""
     # Filter already posted
     fresh = [s for s in stories if s["url"] not in posted_urls]
@@ -449,7 +458,15 @@ def run(stories: list[dict], posted_urls: set, force_local: bool = False) -> tup
     if len(fresh) < before:
         print(f"[selector] Blocked {before - len(fresh)} irrelevant stories")
 
-    scored = score_stories(fresh)
+    import logger
+    recent_topics = logger.get_recent_topics(days=7) + list(extra_topics or [])
+    scored = score_stories(fresh, recent_topics)
+    repeats = [s for s in scored if s.get("same_as_recent")]
+    if repeats:
+        print(f"[selector] Skipped {len(repeats)} stories about recently posted topics:")
+        for s in repeats[:5]:
+            print(f"           - {s['headline'][:70]}")
+        scored = [s for s in scored if not s.get("same_as_recent")]
 
     # Quality gate: a local story leads only when it is strong enough
     # (score >= MIN_LOCAL_SCORE). Otherwise the best global story leads.
@@ -473,7 +490,6 @@ def run(stories: list[dict], posted_urls: set, force_local: bool = False) -> tup
     pick_urls = {s["url"] for s in picks}
     fallback_pool = [s for s in scored if s["url"] not in pick_urls]
 
-    import logger
     recent_angles = logger.get_recent_angles(3)
     print(f"[selector] Recent hook angles (newest first): {recent_angles or 'none'}")
 
