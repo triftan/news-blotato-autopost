@@ -4,6 +4,7 @@ Main pipeline orchestrator:
 """
 import argparse
 import json
+import os
 import re
 import sys
 from datetime import datetime, timedelta, timezone
@@ -99,6 +100,30 @@ def posts_already_today(cfg: dict, channel_id: str) -> list[dict]:
     return poster.posts_between(channel_id, start.isoformat(), end.isoformat())
 
 
+def buffer_topics(cfg: dict, channel_id: str) -> list[str]:
+    """First caption line of Buffer posts from 7 days back to 7 days ahead.
+
+    Covers posts queued by hand in Buffer, so the bot does not repeat their topic.
+    """
+    if not os.environ.get("BUFFER_API_KEY", "").strip():
+        return []
+    now = datetime.now(timezone.utc)
+    try:
+        posts = poster.posts_between(
+            channel_id, (now - timedelta(days=7)).isoformat(), (now + timedelta(days=7)).isoformat()
+        )
+    except Exception as e:
+        print(f"[pipeline] Could not read Buffer posts for the topic check ({e})")
+        return []
+    topics = []
+    for p in posts:
+        first = next((line.strip() for line in str(p.get("text", "")).splitlines() if line.strip()), "")
+        if first:
+            topics.append(first[:140])
+    print(f"[pipeline] {len(topics)} Buffer posts in the last/next 7 days added to the topic check")
+    return topics
+
+
 def run(dry_run: bool = False, force_local: bool = False, buffer_draft: bool = False,
         story_url: str = ""):
     with open("config.json", encoding="utf-8") as config_file:
@@ -163,7 +188,8 @@ def run(dry_run: bool = False, force_local: bool = False, buffer_draft: bool = F
 
     if pairs is None:
         print("\n── STEP 3: SELECT + WRITE ──")
-        pairs = selector.run(stories, posted_urls, force_local=force_local)
+        pairs = selector.run(stories, posted_urls, force_local=force_local,
+                             extra_topics=buffer_topics(cfg, account_id))
     if not pairs:
         print("[pipeline] No fresh stories to post — exiting.")
         sys.exit(0)
