@@ -4,16 +4,36 @@
     "https://techcrunch.com/2026/10/25/ai-delivers-zero-financial-payoff-to-most-companies-according-to-apollo-economist/",
     "https://www.straitstimes.com/business/singapore-manufacturers-stay-upbeat-on-ai-demand-despite-geopolitical-clouds",
     "https://www.straitstimes.com/tech/fixing-the-bottom-rung-fresh-grads-urged-to-use-critique-ai-to-get-a-leg-up-in-employment",
-    "https://www.cnbc.com/2026/11/02/anthropic-ant-s-1-quarter-financials.html"
+    "https://www.cnbc.com/2026/11/02/anthropic-ant-s-1-quarter-financials.html",
+    "https://www.vietnam.vn/en/ai-quan-su-lan-ranh-mong-manh-giua-buoc-ngoat-quan-su-va-tham-hoa-toan-cau"
   ],
-  "posts": [],
-  "img_urls": [],
+  "posts": [
+    {
+      "url": "https://www.vietnam.vn/en/ai-quan-su-lan-ranh-mong-manh-giua-buoc-ngoat-quan-su-va-tham-hoa-toan-cau",
+      "headline": "Military AI: The fine line between military breakthrough and global catastrophe.",
+      "ig_post_id": "6aec5937287b085e661ee0dd",
+      "posted_at": "2026-11-05T10:25:02.705765+00:00"
+    }
+  ],
+  "img_urls": [
+    "https://pixabay.com/photos/lecture-instructor-lecture-room-3986809/",
+    "https://pixabay.com/photos/earth-globe-planet-world-space-11015/",
+    "https://pixabay.com/photos/singapore-night-marina-asia-hotel-1132358/",
+    "https://pixabay.com/photos/bucharest-romania-square-building-2711816/",
+    "https://vstatic.vietnam.vn/vietnam/resource/IMAGE/2026/11/05/1793861646910_cuoc-dua-ai-quan-su-co-hoi-dot-pha-hay-nguy-co-tham-hoa-chien-tranh-1357.jpeg",
+    "https://pixabay.com/photos/space-center-spacex-control-center-693251/",
+    "https://pixabay.com/photos/student-typing-keyboard-text-849825/",
+    "https://pixabay.com/photos/backlit-stars-night-sky-beautiful-1845281/",
+    "https://pixabay.com/photos/under-construction-stop-2629935/",
+    "https://pixabay.com/photos/warbird-propeller-airplane-aircraft-2536190/"
+  ],
   "angle_history": [
     "NUMBERS",
     "AGAINST THE GRAIN",
     "NUMBERS",
     "AGAINST THE GRAIN",
-    "CONTROVERSIAL"
+    "CONTROVERSIAL",
+    "WELL KNOWN, LITTLE UNDERSTOOD"
   ],
   "topic_history": [
     {
@@ -35,6 +55,10 @@
     {
       "headline": "Anthropic reports $17B in Q3 revenue and a $23.29B loss, $895B commitments in revised S-1 (IPO filing)",
       "date": "2026-11-07T03:00:00+00:00"
+    },
+    {
+      "headline": "Military AI: The fine line between military breakthrough and global catastrophe.",
+      "date": "2026-11-05T10:25:02.705749+00:00"
     }
   ]
 }
