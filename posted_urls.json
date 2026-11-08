@@ -5,7 +5,8 @@
     "https://www.straitstimes.com/business/singapore-manufacturers-stay-upbeat-on-ai-demand-despite-geopolitical-clouds",
     "https://www.straitstimes.com/tech/fixing-the-bottom-rung-fresh-grads-urged-to-use-critique-ai-to-get-a-leg-up-in-employment",
     "https://www.cnbc.com/2026/11/02/anthropic-ant-s-1-quarter-financials.html",
-    "https://www.vietnam.vn/en/ai-quan-su-lan-ranh-mong-manh-giua-buoc-ngoat-quan-su-va-tham-hoa-toan-cau"
+    "https://www.vietnam.vn/en/ai-quan-su-lan-ranh-mong-manh-giua-buoc-ngoat-quan-su-va-tham-hoa-toan-cau",
+    "https://hunch.net/?p=13764006"
   ],
   "posts": [
     {
@@ -13,6 +14,12 @@
       "headline": "Military AI: The fine line between military breakthrough and global catastrophe.",
       "ig_post_id": "6aec5937287b085e661ee0dd",
       "posted_at": "2026-11-05T10:25:02.705765+00:00"
+    },
+    {
+      "url": "https://hunch.net/?p=13764006",
+      "headline": "The end of Microsoft Research's AI Frontiers group",
+      "ig_post_id": "6af046a19214322f68454e4b",
+      "posted_at": "2026-11-08T09:54:38.817233+00:00"
     }
   ],
   "img_urls": [
@@ -25,7 +32,17 @@
     "https://pixabay.com/photos/student-typing-keyboard-text-849825/",
     "https://pixabay.com/photos/backlit-stars-night-sky-beautiful-1845281/",
     "https://pixabay.com/photos/under-construction-stop-2629935/",
-    "https://pixabay.com/photos/warbird-propeller-airplane-aircraft-2536190/"
+    "https://pixabay.com/photos/warbird-propeller-airplane-aircraft-2536190/",
+    "https://pixabay.com/photos/speaker-talk-woman-microphone-6377629/",
+    "https://pixabay.com/photos/singapore-city-urban-cityscape-1959463/",
+    "https://pixabay.com/photos/new-year-mobile-phones-texting-1490691/",
+    "https://pixabay.com/photos/people-business-meeting-1979261/",
+    "https://pixabay.com/photos/scanning-electron-microscope-2223457/",
+    "https://pixabay.com/photos/it-server-server-cabinet-network-838379/",
+    "https://pixabay.com/photos/computer-laptop-tech-blue-computer-4795762/",
+    "https://pixabay.com/photos/office-boardroom-meeting-table-1516329/",
+    "https://pixabay.com/photos/server-space-the-server-room-dark-2160321/",
+    "https://pixabay.com/photos/building-tower-lotte-tower-7619501/"
   ],
   "angle_history": [
     "NUMBERS",
@@ -33,7 +50,8 @@
     "NUMBERS",
     "AGAINST THE GRAIN",
     "CONTROVERSIAL",
-    "WELL KNOWN, LITTLE UNDERSTOOD"
+    "WELL KNOWN, LITTLE UNDERSTOOD",
+    "NUMBERS"
   ],
   "topic_history": [
     {
@@ -59,6 +77,10 @@
     {
       "headline": "Military AI: The fine line between military breakthrough and global catastrophe.",
       "date": "2026-11-05T10:25:02.705749+00:00"
+    },
+    {
+      "headline": "The end of Microsoft Research's AI Frontiers group",
+      "date": "2026-11-08T09:54:38.817214+00:00"
     }
   ]
 }
