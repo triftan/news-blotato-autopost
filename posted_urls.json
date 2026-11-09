@@ -6,7 +6,8 @@
     "https://www.straitstimes.com/tech/fixing-the-bottom-rung-fresh-grads-urged-to-use-critique-ai-to-get-a-leg-up-in-employment",
     "https://www.cnbc.com/2026/11/02/anthropic-ant-s-1-quarter-financials.html",
     "https://www.vietnam.vn/en/ai-quan-su-lan-ranh-mong-manh-giua-buoc-ngoat-quan-su-va-tham-hoa-toan-cau",
-    "https://hunch.net/?p=13764006"
+    "https://hunch.net/?p=13764006",
+    "https://the-european.eu/story-68772/scientists-grow-worlds-largest-diamond-crystal-in-breakthrough-that-could-stop-ai-chips-overheating.html"
   ],
   "posts": [
     {
@@ -20,6 +21,12 @@
       "headline": "The end of Microsoft Research's AI Frontiers group",
       "ig_post_id": "6af046a19214322f68454e4b",
       "posted_at": "2026-11-08T09:54:38.817233+00:00"
+    },
+    {
+      "url": "https://the-european.eu/story-68772/scientists-grow-worlds-largest-diamond-crystal-in-breakthrough-that-could-stop-ai-chips-overheating.html",
+      "headline": "Scientists grow world\u2019s largest diamond crystal in breakthrough that could stop ",
+      "ig_post_id": "6af1a6d2202a9ae7921596a2",
+      "posted_at": "2026-11-09T10:57:19.467889+00:00"
     }
   ],
   "img_urls": [
@@ -42,7 +49,17 @@
     "https://pixabay.com/photos/computer-laptop-tech-blue-computer-4795762/",
     "https://pixabay.com/photos/office-boardroom-meeting-table-1516329/",
     "https://pixabay.com/photos/server-space-the-server-room-dark-2160321/",
-    "https://pixabay.com/photos/building-tower-lotte-tower-7619501/"
+    "https://pixabay.com/photos/building-tower-lotte-tower-7619501/",
+    "https://pixabay.com/photos/circuit-board-electronic-circuit-973311/",
+    "https://pixabay.com/photos/analysis-biochemistry-biologist-2030265/",
+    "https://pixabay.com/photos/dinosaur-t-rex-girl-dangerous-dino-7193163/",
+    "https://pixabay.com/photos/skyline-cityscape-buildings-255116/",
+    "https://pixabay.com/photos/woman-lab-science-working-engineer-8499941/",
+    "https://pixabay.com/photos/study-workroom-office-glimpse-789631/",
+    "https://pixabay.com/photos/snowflake-stars-winter-snow-3009009/",
+    "https://pixabay.com/photos/event-venue-auditorium-meeting-1597531/",
+    "https://pixabay.com/photos/cpu-processor-computer-chip-pc-424812/",
+    "https://the-european.eu/wp-content/uploads/assets_MS2028465_000001_Picture1_18.webp"
   ],
   "angle_history": [
     "NUMBERS",
@@ -51,7 +68,8 @@
     "AGAINST THE GRAIN",
     "CONTROVERSIAL",
     "WELL KNOWN, LITTLE UNDERSTOOD",
-    "NUMBERS"
+    "NUMBERS",
+    "AGAINST THE GRAIN"
   ],
   "topic_history": [
     {
@@ -81,6 +99,10 @@
     {
       "headline": "The end of Microsoft Research's AI Frontiers group",
       "date": "2026-11-08T09:54:38.817214+00:00"
+    },
+    {
+      "headline": "Scientists grow world\u2019s largest diamond crystal in breakthrough that could stop AI chips overheating",
+      "date": "2026-11-09T10:57:19.467873+00:00"
     }
   ]
 }
