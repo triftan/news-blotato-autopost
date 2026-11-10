@@ -7,12 +7,12 @@
     "source": "Anthropic"
   },
   "carousel": {
-    "angle": 8,
-    "angle_name": "NUMBERS",
+    "angle": 7,
+    "angle_name": "UNCOMMON / WEIRD",
     "cover_badge": "BREAKING",
     "meme_text": "",
-    "cover_headline": "Anthropic's New AI Just Did\n11 Days of Math\nin 30 Hours.",
-    "cover_subheadline": "Claude Fable 5.2 launched Nov 9. Smarter, faster, and 20% cheaper than OpenAI's top model.",
+    "cover_headline": "Claude Fable 5.2\nIs Insane.",
+    "cover_subheadline": "1,000 AI agents did 11 days of math in 30 hours. And it costs 20% less than OpenAI's top model.",
     "slides": [
       {
         "num": 2,
@@ -63,7 +63,7 @@
         "insight": "Independent tests are still coming. Anthropic says AI now writes over 90% of its own code."
       }
     ],
-    "caption": "Anthropic's new AI just did 11 days of math in 30 hours.\n\nClaude Fable 5.2 launched on Nov 9. A team of 1,000 AI agents checked a famous math proof that took an earlier Claude 11 days.\n\nIt also built 3 working gadgets from a one-paragraph prompt, and it costs 20% less than OpenAI's GPT-6 Astra.\n\nThe catch: these results come from Anthropic itself. Swipe for the full breakdown.\n\nImages: Anthropic, The Next Web, MacRumors, Pixabay"
+    "caption": "Claude Fable 5.2 is insane.\n\nClaude Fable 5.2 launched on Nov 9. A team of 1,000 AI agents checked a famous math proof that took an earlier Claude 11 days.\n\nIt also built 3 working gadgets from a one-paragraph prompt, and it costs 20% less than OpenAI's GPT-6 Astra.\n\nThe catch: these results come from Anthropic itself. Swipe for the full breakdown.\n\nImages: Anthropic, The Next Web, MacRumors, Pixabay"
   },
   "images": [
     {
