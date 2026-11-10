@@ -124,3 +124,7 @@ python pipeline.py --dry-run
 ```
 
 Slides land in `~/Downloads/carousels/`. `--dry-run` skips Instagram. Omit it only when `config.json` has your real account id and you want a live post.
+
+## Hand-written carousels
+
+To post a story you picked yourself, commit a spec to `manual/<name>.json` and run **AI News Carousel** with `manual_spec` set to that path (tick **Dry run** first to check the slides). The spec holds the `story`, the `carousel` text (cover, 8 slides, caption) and 10 `images` entries: `{"query": "...", "category": "..."}` for a Pixabay photo, `{"url": "..."}` for a specific image (`"fit": true` for logos), `{"repo_file": "..."}`, or `{"gradient": true}`. Add `"due_at": "2026-11-11T11:00:00+08:00"` to schedule it in Buffer instead of posting right away. See `manual/fable52.json` for an example.

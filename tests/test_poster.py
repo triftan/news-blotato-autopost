@@ -110,6 +110,14 @@ class PosterTests(unittest.TestCase):
         self.assertTrue(data["saveToDraft"])
         self.assertEqual(data["mode"], "addToQueue")
 
+    def test_post_carousel_schedules_with_due_at(self):
+        response = _gql({"createPost": {"post": {"id": "p1", "status": "scheduled"}}})
+        with patch.object(self.poster.requests, "post", return_value=response) as post:
+            self.poster.post_carousel(CHANNEL, "Caption", ["https://img/1.jpg"], due_at="2026-11-11T11:00:00+08:00")
+        data = post.call_args.kwargs["json"]["variables"]["input"]
+        self.assertEqual(data["mode"], "customScheduled")
+        self.assertEqual(data["dueAt"], "2026-11-11T11:00:00+08:00")
+
     def test_post_carousel_raises_on_mutation_error(self):
         response = _gql({"createPost": {"message": "Invalid image"}})
         with patch.object(self.poster.requests, "post", return_value=response):

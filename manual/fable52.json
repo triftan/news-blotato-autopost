@@ -1,0 +1,116 @@
+{
+  "run_id": "manual_fable52",
+  "story": {
+    "headline": "Anthropic launches Claude Fable 5.2 and Mythos 5.2",
+    "url": "https://www.anthropic.com/claude/fable",
+    "category": "global_ai",
+    "source": "Anthropic"
+  },
+  "carousel": {
+    "angle": 7,
+    "angle_name": "UNCOMMON / WEIRD",
+    "cover_badge": "BREAKING",
+    "meme_text": "",
+    "cover_headline": "Claude Fable 5.2\nIs Insane.",
+    "cover_subheadline": "1,000 AI agents did 11 days of math in 30 hours. And it costs 20% less than OpenAI's top model.",
+    "slides": [
+      {
+        "num": 2,
+        "label": "WHAT HAPPENED",
+        "headline": "Anthropic Launched Claude Fable 5.2 on November 9",
+        "insight": "Its most powerful public AI. A twin, Mythos 5.2, is locked to vetted security and science teams."
+      },
+      {
+        "num": 3,
+        "label": "THE MATH",
+        "headline": "1,000 AI Agents Checked a Famous Proof in 30 Hours",
+        "insight": "Fortune says it was Fermat's Last Theorem. An earlier Claude needed 11 days."
+      },
+      {
+        "num": 4,
+        "label": "THE GADGETS",
+        "headline": "From One Paragraph, It Built 3 Working Gadgets",
+        "insight": "Circuit boards, 3D-printed cases and the software, according to Anthropic."
+      },
+      {
+        "num": 5,
+        "label": "THE NUMBER",
+        "headline": "Its Robot Control Score More Than Doubled",
+        "insight": "64.9% vs 27.6% for Fable 5.1, on Anthropic's own RoboDojo test."
+      },
+      {
+        "num": 6,
+        "label": "THE SPEED",
+        "headline": "A 3.3-Hour Science Job Now Takes Under 4 Minutes",
+        "insight": "Physics code it rewrote ran about 36x faster on the same chip."
+      },
+      {
+        "num": 7,
+        "label": "THE PRICE",
+        "headline": "It Costs 20% Less Than OpenAI's GPT-6 Astra",
+        "insight": "$8 per million input tokens vs $10. Fast mode runs up to 2.5x quicker."
+      },
+      {
+        "num": 8,
+        "label": "THE CATCH",
+        "headline": "It Refuses Hacking and Risky Biology Requests",
+        "insight": "Flagged questions get handed to weaker models. The full-power twin is for approved experts only."
+      },
+      {
+        "num": 9,
+        "label": "WATCH OUT FOR",
+        "headline": "These Results Come From Anthropic Itself",
+        "insight": "Independent tests are still coming. Anthropic says AI now writes over 90% of its own code."
+      }
+    ],
+    "caption": "Claude Fable 5.2 is insane.\n\nClaude Fable 5.2 launched on Nov 9. A team of 1,000 AI agents checked a famous math proof that took an earlier Claude 11 days.\n\nIt also built 3 working gadgets from a one-paragraph prompt, and it costs 20% less than OpenAI's GPT-6 Astra.\n\nThe catch: these results come from Anthropic itself. Swipe for the full breakdown.\n\nImages: Anthropic, The Next Web, MacRumors, Pixabay"
+  },
+  "images": [
+    {
+      "url": "https://media.thenextweb.com/2026/11/claude-fable-mythos-5-2-announcement-graphic.jpg",
+      "fit": true,
+      "crop": [
+        0,
+        0,
+        0.86,
+        0.86
+      ]
+    },
+    {
+      "url": "https://assets.claude.com/5c81f45ec52d199f96519d29280f99fdcf4db283.jpg",
+      "fit": true
+    },
+    {
+      "query": "mathematics chalkboard equations",
+      "category": "education"
+    },
+    {
+      "query": "circuit board electronics",
+      "category": "computer"
+    },
+    {
+      "query": "robot arm",
+      "category": "industry"
+    },
+    {
+      "query": "laboratory scientist",
+      "category": "science"
+    },
+    {
+      "url": "https://images.macrumors.com/t/miP5cemYnLJaXuUhVtW0LMDZCJQ=/1782x/article-new/2025/09/anthopic-claude.jpg",
+      "fit": true
+    },
+    {
+      "query": "padlock security",
+      "category": "computer"
+    },
+    {
+      "query": "magnifying glass",
+      "category": "business"
+    },
+    {
+      "gradient": true
+    }
+  ],
+  "due_at": "2026-11-10T13:00:00+08:00"
+}

@@ -261,7 +261,8 @@ mutation CreatePost($input: CreatePostInput!) {
 """
 
 
-def post_carousel(channel_id: str, caption: str, media_urls: list[str], draft: bool = False) -> str:
+def post_carousel(channel_id: str, caption: str, media_urls: list[str], draft: bool = False,
+                  due_at: str | None = None) -> str:
     """Ask Buffer to publish the carousel now (or save it as a draft) and return its id."""
     variables = {
         "input": {
@@ -272,6 +273,7 @@ def post_carousel(channel_id: str, caption: str, media_urls: list[str], draft: b
             "needsApproval": False,
             "assets": [{"image": {"url": url}} for url in media_urls],
             **({"saveToDraft": True, "mode": "addToQueue"} if draft else {}),
+            **({"mode": "customScheduled", "dueAt": due_at} if due_at and not draft else {}),
             "metadata": {"instagram": {"type": "post", "shouldShareToFeed": True}},
         }
     }
@@ -317,7 +319,7 @@ def wait_for_publication(post_id: str, timeout: int = 240, poll_interval: int = 
 
 
 def run(image_paths: list[str], caption: str, channel_id: str, folder: str,
-        draft: bool = False) -> str:
+        draft: bool = False, due_at: str | None = None) -> str:
     """Host all slides, submit the carousel, and return the Buffer post id.
 
     With draft=True the carousel is saved as a Buffer draft and nothing is published.
@@ -325,9 +327,12 @@ def run(image_paths: list[str], caption: str, channel_id: str, folder: str,
     print(f"[poster] Hosting {len(image_paths)} slides on GitHub ({MEDIA_BRANCH} branch)...")
     public_urls = upload_all_slides(image_paths, folder)
     print(f"[poster] Posting carousel to Buffer channel {channel_id}...")
-    post_id = post_carousel(channel_id, caption, public_urls, draft=draft)
+    post_id = post_carousel(channel_id, caption, public_urls, draft=draft, due_at=due_at)
     if draft:
         print(f"[poster] Saved as a Buffer draft (not published): {post_id}")
+        return post_id
+    if due_at:
+        print(f"[poster] Scheduled in Buffer for {due_at}: {post_id}")
         return post_id
     wait_for_publication(post_id)
     return post_id
