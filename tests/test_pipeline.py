@@ -79,5 +79,32 @@ class OnePostPerDayTests(unittest.TestCase):
         scrape.assert_called_once()
 
 
+
+class ManualSpecTests(unittest.TestCase):
+    def test_manual_dry_run_builds_without_scraping_or_posting(self):
+        from unittest.mock import patch
+        spec = {
+            "story": {"headline": "Test launch", "url": "https://example.com/a", "category": "global_ai"},
+            "carousel": {"cover_headline": "Big \u2014 news", "slides": [{"num": 2, "headline": "H"}],
+                         "caption": "Hook line"},
+            "images": [{"gradient": True}],
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "spec.json"
+            path.write_text(json.dumps(spec))
+            png = Path(tmp) / "slide_01.png"
+            png.touch()
+            with patch.object(pipeline.scraper, "run") as scrape, \
+                 patch.object(pipeline.builder, "run", return_value=[str(png)]) as build, \
+                 patch.object(pipeline.poster, "run") as post:
+                pipeline.run(dry_run=True, manual_spec=str(path))
+            manifest = json.loads((Path(tmp) / "review_manifest.json").read_text())
+        scrape.assert_not_called()
+        post.assert_not_called()
+        carousel = build.call_args.args[0]
+        self.assertEqual(carousel["cover_headline"], "Big, news")
+        self.assertIn("brandonlee.ai/group", manifest["carousel"]["caption"])
+
+
 if __name__ == "__main__":
     unittest.main()

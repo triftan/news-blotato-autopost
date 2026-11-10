@@ -308,3 +308,76 @@ def generate_slide_images(carousel: dict, output_dir: str, og_image_url: str = "
 if __name__ == "__main__":
     result = generate_slide_images({}, "/tmp/cs_test_run")
     print(result)
+
+
+def _place(img: Image.Image, path: str, fit: bool = False, crop: list | None = None,
+           y_frac: float = 0.30) -> None:
+    """Save one background. crop = [left, top, right, bottom] as fractions.
+
+    fit=True letterboxes the whole image (for logos and graphics) on its own
+    corner colour instead of cropping it to 4:5.
+    """
+    img = img.convert("RGB")
+    if crop:
+        w, h = img.size
+        img = img.crop((int(crop[0] * w), int(crop[1] * h), int(crop[2] * w), int(crop[3] * h)))
+    if fit:
+        canvas = Image.new("RGB", (WIDTH, HEIGHT), img.getpixel((3, 3)))
+        thumb = img.copy()
+        thumb.thumbnail((WIDTH - 80, int(HEIGHT * 0.6)))
+        canvas.paste(thumb, ((WIDTH - thumb.width) // 2, int(HEIGHT * y_frac) - thumb.height // 2))
+        canvas.save(path, "JPEG", quality=92)
+        return
+    buf = io.BytesIO()
+    img.save(buf, "JPEG", quality=95)
+    _crop_and_resize(buf.getvalue(), path)
+
+
+def images_from_spec(entries: list[dict], output_dir: str,
+                     used_img_urls: set | None = None) -> tuple[list[str], set, list[str]]:
+    """Build the 10 slide backgrounds for a hand-written carousel.
+
+    Each entry is one of:
+      {"query": "server room", "category": "computer"}   Pixabay search
+      {"url": "https://..."}                              a specific image (article photo, logo)
+      {"repo_file": "manual/assets/x.jpg"}                an image committed to the repo
+      {"gradient": true}                                  plain dark background
+    "fit": true and "crop": [l, t, r, b] (fractions) work with url and repo_file.
+    """
+    Path(output_dir).mkdir(parents=True, exist_ok=True)
+    session_used = set(used_img_urls or set())
+    paths, sources, new_urls = [], [], set()
+    entries = list(entries)[:10] + [{"gradient": True}] * max(0, 10 - len(entries))
+    for i, entry in enumerate(entries):
+        path = os.path.join(output_dir, f"slide_{i + 1:02d}.jpg")
+        source = "gradient"
+        try:
+            if entry.get("query"):
+                data, key = _fetch_pixabay(entry["query"], slide_index=i,
+                                           fallback_query=_NEUTRAL_FALLBACK_QUERIES[i],
+                                           used_urls=session_used, category=entry.get("category"))
+                if data:
+                    _crop_and_resize(data, path)
+                    session_used.add(key)
+                    new_urls.add(key)
+                    source = "pixabay"
+            elif entry.get("url"):
+                resp = requests.get(entry["url"], timeout=30, headers={
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                                  "(KHTML, like Gecko) Chrome/124.0 Safari/537.36"})
+                resp.raise_for_status()
+                _place(Image.open(io.BytesIO(resp.content)), path, entry.get("fit", False), entry.get("crop"))
+                source = "url"
+            elif entry.get("repo_file"):
+                local = Path(__file__).parent / entry["repo_file"]
+                _place(Image.open(local), path, entry.get("fit", False), entry.get("crop"))
+                source = "repo_file"
+        except Exception as e:
+            print(f"[image_gen] Slide {i + 1} image failed ({e}); using gradient")
+            source = "gradient"
+        if source == "gradient":
+            _gradient_fallback(path, i)
+        print(f"[image_gen] Slide {i + 1}: {source}")
+        paths.append(path)
+        sources.append(source)
+    return paths, new_urls, sources

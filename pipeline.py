@@ -124,8 +124,45 @@ def buffer_topics(cfg: dict, channel_id: str) -> list[str]:
     return topics
 
 
+def run_manual(spec_path: str, cfg: dict, account_id: str, dry_run: bool, buffer_draft: bool) -> None:
+    """Build (and optionally post or schedule) a hand-written carousel.
+
+    The spec is a JSON file committed to the repo with: story, carousel (cover
+    text, 8 slides, caption), images (10 entries, see image_gen.images_from_spec)
+    and an optional due_at (ISO time) to schedule instead of posting now.
+    """
+    spec = json.loads(Path(spec_path).read_text(encoding="utf-8"))
+    story = spec["story"]
+    story.setdefault("category", "global_ai")
+    carousel = selector._strip_dashes(spec["carousel"])
+    carousel["caption"] = selector.ensure_caption_cta(
+        carousel.get("caption", ""), local=story["category"] == "local"
+    )
+    run_id = spec.get("run_id") or f"manual_{Path(spec_path).stem}"
+    print(f"\n── MANUAL CAROUSEL: {story.get('headline', run_id)[:70]} ──")
+
+    image_paths, new_img_urls, image_sources = image_gen.images_from_spec(
+        spec.get("images", []), f"/tmp/carousel_imgs_{run_id}", logger.get_used_img_urls()
+    )
+    png_paths = builder.run(carousel, image_paths, run_id)
+    write_review_manifest(png_paths, story, carousel, image_sources, run_id)
+    if dry_run:
+        print(f"\n[pipeline] DRY RUN: manual carousel built, nothing posted. PNGs: ~/Downloads/carousels/{run_id}/")
+        return
+
+    due_at = spec.get("due_at")
+    post_id = poster.run(png_paths, carousel["caption"], account_id, run_id,
+                         draft=buffer_draft, due_at=due_at)
+    if buffer_draft:
+        print(f"\n✓ BUFFER DRAFT SAVED (nothing published): {post_id}")
+        return
+    story["buffer_channel_id"] = account_id
+    logger.log_posted(story, post_id, carousel, new_img_urls=new_img_urls)
+    print(f"\n✓ DONE: {'scheduled for ' + due_at if due_at else 'posted'} ({post_id})")
+
+
 def run(dry_run: bool = False, force_local: bool = False, buffer_draft: bool = False,
-        story_url: str = ""):
+        story_url: str = "", manual_spec: str = ""):
     with open("config.json", encoding="utf-8") as config_file:
         cfg = json.load(config_file)
     account_id = cfg["buffer"]["channel_id"]
@@ -145,6 +182,10 @@ def run(dry_run: bool = False, force_local: bool = False, buffer_draft: bool = F
     if not dry_run:
         print("\n── STEP 0: BUFFER PREFLIGHT ──")
         poster.validate_account(account_id, account_username)
+
+    if manual_spec:
+        run_manual(manual_spec, cfg, account_id, dry_run, buffer_draft)
+        return
 
     if not dry_run and not buffer_draft and not story_url:
         print("\n── ONE POST PER DAY CHECK ──")
@@ -247,8 +288,9 @@ if __name__ == "__main__":
     parser.add_argument("--dry-run", action="store_true", help="Build but don't post")
     parser.add_argument("--local", action="store_true", help="Lead with a local (e.g. Singapore) story")
     parser.add_argument("--url", default="", help="Build the carousel for this article URL")
+    parser.add_argument("--manual", default="", help="Build a hand-written carousel from this spec JSON")
     parser.add_argument("--buffer-draft", action="store_true",
                         help="Send to Buffer as a draft instead of publishing (end-to-end test)")
     args = parser.parse_args()
     run(dry_run=args.dry_run, force_local=args.local, buffer_draft=args.buffer_draft,
-        story_url=args.url.strip())
+        story_url=args.url.strip(), manual_spec=args.manual.strip())

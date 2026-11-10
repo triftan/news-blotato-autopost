@@ -47,5 +47,41 @@ class ImageGenerationFallbackTests(unittest.TestCase):
         self.assertEqual(second.kwargs["category"], "business")
 
 
+
+class ImagesFromSpecTests(unittest.TestCase):
+    def setUp(self):
+        import image_gen
+        self.image_gen = importlib.reload(image_gen)
+
+    def test_mixes_pixabay_url_and_gradient_entries(self):
+        import io
+        from unittest.mock import Mock
+        from PIL import Image
+        buf = io.BytesIO()
+        Image.new("RGB", (400, 200), (250, 250, 240)).save(buf, "PNG")
+        resp = Mock(content=buf.getvalue())
+        resp.raise_for_status = Mock()
+        jpg = io.BytesIO()
+        Image.new("RGB", (800, 1000), (10, 20, 30)).save(jpg, "JPEG")
+        with tempfile.TemporaryDirectory() as out:
+            with (
+                patch.object(self.image_gen, "_fetch_pixabay", return_value=(jpg.getvalue(), "https://pixabay.com/p/1")) as pix,
+                patch.object(self.image_gen.requests, "get", return_value=resp),
+            ):
+                paths, urls, sources = self.image_gen.images_from_spec(
+                    [{"query": "robot arm", "category": "industry"},
+                     {"url": "https://example.com/logo.png", "fit": True},
+                     {"gradient": True}],
+                    out,
+                )
+                size = Image.open(paths[1]).size
+        self.assertEqual(len(paths), 10)
+        self.assertEqual(sources[:3], ["pixabay", "url", "gradient"])
+        self.assertEqual(sources[3:], ["gradient"] * 7)
+        self.assertEqual(urls, {"https://pixabay.com/p/1"})
+        self.assertEqual(pix.call_args.kwargs["category"], "industry")
+        self.assertEqual(size, (1080, 1350))
+
+
 if __name__ == "__main__":
     unittest.main()
