@@ -7,7 +7,8 @@
     "https://www.cnbc.com/2026/11/02/anthropic-ant-s-1-quarter-financials.html",
     "https://www.vietnam.vn/en/ai-quan-su-lan-ranh-mong-manh-giua-buoc-ngoat-quan-su-va-tham-hoa-toan-cau",
     "https://hunch.net/?p=13764006",
-    "https://the-european.eu/story-68772/scientists-grow-worlds-largest-diamond-crystal-in-breakthrough-that-could-stop-ai-chips-overheating.html"
+    "https://the-european.eu/story-68772/scientists-grow-worlds-largest-diamond-crystal-in-breakthrough-that-could-stop-ai-chips-overheating.html",
+    "https://www.anthropic.com/claude/fable"
   ],
   "posts": [
     {
@@ -27,6 +28,12 @@
       "headline": "Scientists grow world\u2019s largest diamond crystal in breakthrough that could stop ",
       "ig_post_id": "6af1a6d2202a9ae7921596a2",
       "posted_at": "2026-11-09T10:57:19.467889+00:00"
+    },
+    {
+      "url": "https://www.anthropic.com/claude/fable",
+      "headline": "Anthropic launches Claude Fable 5.2 and Mythos 5.2",
+      "ig_post_id": "6af283e1223aa16048e3d3b9",
+      "posted_at": "2026-11-10T02:39:29.449234+00:00"
     }
   ],
   "img_urls": [
@@ -59,7 +66,13 @@
     "https://pixabay.com/photos/snowflake-stars-winter-snow-3009009/",
     "https://pixabay.com/photos/event-venue-auditorium-meeting-1597531/",
     "https://pixabay.com/photos/cpu-processor-computer-chip-pc-424812/",
-    "https://the-european.eu/wp-content/uploads/assets_MS2028465_000001_Picture1_18.webp"
+    "https://the-european.eu/wp-content/uploads/assets_MS2028465_000001_Picture1_18.webp",
+    "https://pixabay.com/photos/biology-research-laboratory-science-220005/",
+    "https://pixabay.com/photos/industry-industry-4-web-network-2738405/",
+    "https://pixabay.com/photos/board-electronics-computer-453758/",
+    "https://pixabay.com/photos/math-blackboard-education-classroom-1547018/",
+    "https://pixabay.com/photos/cyber-security-internet-network-4610993/",
+    "https://pixabay.com/photos/application-money-money-calculator-1756269/"
   ],
   "angle_history": [
     "NUMBERS",
@@ -69,7 +82,8 @@
     "CONTROVERSIAL",
     "WELL KNOWN, LITTLE UNDERSTOOD",
     "NUMBERS",
-    "AGAINST THE GRAIN"
+    "AGAINST THE GRAIN",
+    "UNCOMMON / WEIRD"
   ],
   "topic_history": [
     {
@@ -103,6 +117,10 @@
     {
       "headline": "Scientists grow world\u2019s largest diamond crystal in breakthrough that could stop AI chips overheating",
       "date": "2026-11-09T10:57:19.467873+00:00"
+    },
+    {
+      "headline": "Anthropic launches Claude Fable 5.2 and Mythos 5.2",
+      "date": "2026-11-10T02:39:29.449220+00:00"
     }
   ]
 }
