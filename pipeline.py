@@ -91,13 +91,42 @@ def write_review_manifest(
     return str(path)
 
 
+def is_news_carousel(post: dict, cfg: dict) -> bool:
+    """True for posts this bot makes (or that use its caption), not the owner's own reels/stories."""
+    marker = f'Comment "{cfg.get("comment_keyword", "AI")}" to join'
+    return marker in str(post.get("text", ""))
+
+
 def posts_already_today(cfg: dict, channel_id: str) -> list[dict]:
-    """Buffer posts scheduled/sent for this channel on today's local date."""
+    """News carousels scheduled/sent for this channel on today's local date.
+
+    The owner's own reels and stories don't count, so they never block the daily post.
+    """
     tz = ZoneInfo(cfg.get("timezone", "Asia/Singapore"))
     now = datetime.now(tz)
     start = now.replace(hour=0, minute=0, second=0, microsecond=0)
     end = start + timedelta(days=1) - timedelta(seconds=1)
-    return poster.posts_between(channel_id, start.isoformat(), end.isoformat())
+    posts = poster.posts_between(channel_id, start.isoformat(), end.isoformat())
+    return [p for p in posts if is_news_carousel(p, cfg)]
+
+
+def scheduled_post_time(cfg: dict, now: datetime | None = None) -> str | None:
+    """Today's posting time (config post_time, local timezone) as ISO, or None to post now.
+
+    The run starts early and schedules the post in Buffer, so GitHub's late
+    starts don't move the posting time. If the run is already past the
+    posting time (or within 10 minutes of it), post right away.
+    """
+    post_time = str(cfg.get("post_time", "")).strip()
+    if not post_time:
+        return None
+    tz = ZoneInfo(cfg.get("timezone", "Asia/Singapore"))
+    now = (now or datetime.now(timezone.utc)).astimezone(tz)
+    hour, minute = (int(x) for x in post_time.split(":"))
+    due = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
+    if due - now < timedelta(minutes=10):
+        return None
+    return due.isoformat()
 
 
 def buffer_topics(cfg: dict, channel_id: str) -> list[str]:
@@ -268,7 +297,10 @@ def run(dry_run: bool = False, force_local: bool = False, buffer_draft: bool = F
 
     print("\n── STEP 6: POST VIA BUFFER ──")
     caption = carousel.get("caption", "")
-    submission_id = poster.run(png_paths, caption, account_id, run_id, draft=buffer_draft)
+    due_at = None if buffer_draft else scheduled_post_time(cfg)
+    if due_at:
+        print(f"[pipeline] Scheduling for {due_at}")
+    submission_id = poster.run(png_paths, caption, account_id, run_id, draft=buffer_draft, due_at=due_at)
     if buffer_draft:
         print(f"\n✓ BUFFER DRAFT SAVED (nothing published): {story['headline'][:60]}")
         print(f"  Buffer post ID: {submission_id}")

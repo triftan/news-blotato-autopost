@@ -2,9 +2,10 @@ name: AI News Carousel
 
 on:
   schedule:
-    # 03:00 UTC every day. That is 11:00 in Singapore (UTC+8).
-    # Change the hour and minute here if you want a different posting time.
-    - cron: '0 3 * * *'
+    # 22:17 UTC = 06:17 in Singapore. The run starts early and schedules the post in
+    # Buffer for post_time in config.json (13:00 Singapore), so GitHub's late starts
+    # don't change the posting time. Off the hour on purpose: :00 runs get delayed most.
+    - cron: '17 22 * * *'
   workflow_dispatch:
     inputs:
       dry_run:
