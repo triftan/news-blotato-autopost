@@ -86,15 +86,11 @@ You can also run **Preflight** any time. It checks the OpenRouter and Pixabay ke
 
 ## Change the posting time
 
-The schedule is in `.github/workflows/ai-news-carousel.yml`:
+Set `post_time` in `config.json` (24-hour, in `timezone`, default `13:00` Singapore time). The bot runs early in the morning, builds the carousel, and schedules it in Buffer for that time, so GitHub starting the job late does not move the post. If a run starts after `post_time`, it posts straight away.
 
-```yaml
-- cron: '0 3 * * *'
-```
+The early run time is the `cron` line in `.github/workflows/ai-news-carousel.yml` (`17 22 * * *` = 22:17 UTC = 06:17 Singapore). GitHub cron is always UTC, and runs set on the hour (`0 * * * *`) are the ones it delays most, so keep the minute off zero.
 
-GitHub cron is always **UTC**, not your local time. `0 3 * * *` means minute 0 of hour 3, every day: **03:00 UTC**. That is 11:00 in Singapore (UTC+8).
-
-Edit the first number for the minute and the second number for the hour. `30 15 * * *` is 15:30 UTC. The workflow file has a short comment next to the line. After you commit the change, the next run uses the new time. GitHub can start a scheduled job a few minutes late when Actions is busy.
+The one-post-per-day check only counts the bot's own news carousels (captions with `Comment "<keyword>" to join`), so reels and stories you post yourself never block it.
 
 ## Troubleshooting
 

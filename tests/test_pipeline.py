@@ -61,7 +61,7 @@ class OnePostPerDayTests(unittest.TestCase):
         from unittest.mock import patch
         with patch.object(pipeline.poster, "validate_account"), \
              patch.object(pipeline.poster, "posts_between",
-                          return_value=[{"status": "scheduled", "dueAt": "x", "text": "queued"}]) as lookup, \
+                          return_value=[{"status": "scheduled", "dueAt": "x", "text": "Hook. Comment \"AI\" to join us"}]) as lookup, \
              patch.object(pipeline.scraper, "run") as scrape:
             pipeline.run()
         scrape.assert_not_called()
@@ -78,6 +78,31 @@ class OnePostPerDayTests(unittest.TestCase):
                 pipeline.run()
         scrape.assert_called_once()
 
+
+
+class PostingTimeTests(unittest.TestCase):
+    CFG = {"post_time": "13:00", "timezone": "Asia/Singapore", "comment_keyword": "AI"}
+
+    def test_early_run_schedules_for_1pm_singapore(self):
+        from datetime import datetime, timezone
+        due = pipeline.scheduled_post_time(self.CFG, datetime(2026, 11, 12, 22, 20, tzinfo=timezone.utc))
+        self.assertEqual(due, "2026-11-13T13:00:00+08:00")
+
+    def test_late_run_posts_now(self):
+        from datetime import datetime, timezone
+        self.assertIsNone(pipeline.scheduled_post_time(self.CFG, datetime(2026, 11, 12, 6, 0, tzinfo=timezone.utc)))
+        self.assertIsNone(pipeline.scheduled_post_time(self.CFG, datetime(2026, 11, 12, 4, 55, tzinfo=timezone.utc)))
+
+    def test_owner_reels_do_not_count_as_the_daily_post(self):
+        from unittest.mock import patch
+        posts = [
+            {"status": "sent", "text": "Claude Fable 5.2 dropped this week. Comment FABLE for my prompts"},
+            {"status": "scheduled", "text": 'Hook\n\nComment "AI" to join Brandonlee.ai'},
+        ]
+        with patch.object(pipeline.poster, "posts_between", return_value=posts):
+            found = pipeline.posts_already_today(self.CFG, "chan")
+        self.assertEqual(len(found), 1)
+        self.assertIn('Comment "AI"', found[0]["text"])
 
 
 class ManualSpecTests(unittest.TestCase):

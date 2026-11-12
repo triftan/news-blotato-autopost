@@ -96,5 +96,6 @@
     "businessinsider.com"
   ],
   "min_local_score": 75,
-  "timezone": "Asia/Singapore"
+  "timezone": "Asia/Singapore",
+  "post_time": "13:00"
 }
