@@ -8,7 +8,8 @@
     "https://www.vietnam.vn/en/ai-quan-su-lan-ranh-mong-manh-giua-buoc-ngoat-quan-su-va-tham-hoa-toan-cau",
     "https://hunch.net/?p=13764006",
     "https://the-european.eu/story-68772/scientists-grow-worlds-largest-diamond-crystal-in-breakthrough-that-could-stop-ai-chips-overheating.html",
-    "https://www.anthropic.com/claude/fable"
+    "https://www.anthropic.com/claude/fable",
+    "https://blog.google/innovation-and-ai/models-and-research/gemini-models/introducing-gemini-4-hydrogen/"
   ],
   "posts": [
     {
@@ -34,6 +35,12 @@
       "headline": "Anthropic launches Claude Fable 5.2 and Mythos 5.2",
       "ig_post_id": "6af283e1223aa16048e3d3b9",
       "posted_at": "2026-11-10T02:39:29.449234+00:00"
+    },
+    {
+      "url": "https://blog.google/innovation-and-ai/models-and-research/gemini-models/introducing-gemini-4-hydrogen/",
+      "headline": "Gemini 4 Hydrogen",
+      "ig_post_id": "6af678bdfb90ccefdd147122",
+      "posted_at": "2026-11-13T02:41:01.199527+00:00"
     }
   ],
   "img_urls": [
@@ -72,7 +79,17 @@
     "https://pixabay.com/photos/board-electronics-computer-453758/",
     "https://pixabay.com/photos/math-blackboard-education-classroom-1547018/",
     "https://pixabay.com/photos/cyber-security-internet-network-4610993/",
-    "https://pixabay.com/photos/application-money-money-calculator-1756269/"
+    "https://pixabay.com/photos/application-money-money-calculator-1756269/",
+    "https://storage.googleapis.com/gweb-uniblog-publish-prod/images/gemini-4-hydrogen__key-art__lockup__16-9.width-1300.jpg",
+    "https://pixabay.com/photos/living-room-conferences-seminar-2174142/",
+    "https://pixabay.com/photos/code-coding-computer-data-1839406/",
+    "https://pixabay.com/photos/singapore-city-urban-skyline-2220473/",
+    "https://pixabay.com/photos/analysis-analytics-business-charts-1841158/",
+    "https://pixabay.com/photos/band-music-bass-audio-sound-171117/",
+    "https://pixabay.com/photos/field-plant-young-plants-green-9652621/",
+    "https://pixabay.com/photos/time-time-management-stopwatch-3933688/",
+    "https://pixabay.com/photos/parking-space-man-city-person-1487891/",
+    "https://pixabay.com/photos/anonymous-hacker-network-mask-2821433/"
   ],
   "angle_history": [
     "NUMBERS",
@@ -83,7 +100,8 @@
     "WELL KNOWN, LITTLE UNDERSTOOD",
     "NUMBERS",
     "AGAINST THE GRAIN",
-    "UNCOMMON / WEIRD"
+    "UNCOMMON / WEIRD",
+    "TRENDING"
   ],
   "topic_history": [
     {
@@ -121,6 +139,10 @@
     {
       "headline": "Anthropic launches Claude Fable 5.2 and Mythos 5.2",
       "date": "2026-11-10T02:39:29.449220+00:00"
+    },
+    {
+      "headline": "Gemini 4 Hydrogen",
+      "date": "2026-11-13T02:41:01.199511+00:00"
     }
   ]
 }
