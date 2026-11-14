@@ -9,7 +9,8 @@
     "https://hunch.net/?p=13764006",
     "https://the-european.eu/story-68772/scientists-grow-worlds-largest-diamond-crystal-in-breakthrough-that-could-stop-ai-chips-overheating.html",
     "https://www.anthropic.com/claude/fable",
-    "https://blog.google/innovation-and-ai/models-and-research/gemini-models/introducing-gemini-4-hydrogen/"
+    "https://blog.google/innovation-and-ai/models-and-research/gemini-models/introducing-gemini-4-hydrogen/",
+    "https://techcrunch.com/2026/11/13/nvidia-ceo-jensen-huangs-affair-with-alleged-chinese-spy-a-timeline/"
   ],
   "posts": [
     {
@@ -41,6 +42,12 @@
       "headline": "Gemini 4 Hydrogen",
       "ig_post_id": "6af678bdfb90ccefdd147122",
       "posted_at": "2026-11-13T02:41:01.199527+00:00"
+    },
+    {
+      "url": "https://techcrunch.com/2026/11/13/nvidia-ceo-jensen-huangs-affair-with-alleged-chinese-spy-a-timeline/",
+      "headline": "The unfolding Jensen Huang scandal: a timeline",
+      "ig_post_id": "6af7c7b74b28296eb12ce457",
+      "posted_at": "2026-11-14T02:30:15.455492+00:00"
     }
   ],
   "img_urls": [
@@ -89,7 +96,17 @@
     "https://pixabay.com/photos/field-plant-young-plants-green-9652621/",
     "https://pixabay.com/photos/time-time-management-stopwatch-3933688/",
     "https://pixabay.com/photos/parking-space-man-city-person-1487891/",
-    "https://pixabay.com/photos/anonymous-hacker-network-mask-2821433/"
+    "https://pixabay.com/photos/anonymous-hacker-network-mask-2821433/",
+    "https://pixabay.com/photos/buildings-skyline-city-lights-647400/",
+    "https://pixabay.com/photos/classified-background-blog-business-2651347/",
+    "https://pixabay.com/photos/telephone-mobile-call-samsung-586266/",
+    "https://pixabay.com/photos/phone-technology-mobile-internet-869669/",
+    "https://techcrunch.com/wp-content/uploads/2025/04/GettyImages-2205754389.jpg?w=1024",
+    "https://pixabay.com/photos/bridge-city-dark-japan-japanese-9620082/",
+    "https://pixabay.com/photos/technology-network-storage-industry-8118382/",
+    "https://pixabay.com/photos/computer-part-circuit-board-7136373/",
+    "https://pixabay.com/photos/newspaper-magnifying-glass-magnifier-3844071/",
+    "https://pixabay.com/photos/iphone-hand-phone-mobile-phone-5537230/"
   ],
   "angle_history": [
     "NUMBERS",
@@ -101,7 +118,8 @@
     "NUMBERS",
     "AGAINST THE GRAIN",
     "UNCOMMON / WEIRD",
-    "TRENDING"
+    "TRENDING",
+    "CONTROVERSIAL"
   ],
   "topic_history": [
     {
@@ -143,6 +161,10 @@
     {
       "headline": "Gemini 4 Hydrogen",
       "date": "2026-11-13T02:41:01.199511+00:00"
+    },
+    {
+      "headline": "The unfolding Jensen Huang scandal: a timeline",
+      "date": "2026-11-14T02:30:15.455476+00:00"
     }
   ]
 }
