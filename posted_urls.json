@@ -10,7 +10,8 @@
     "https://the-european.eu/story-68772/scientists-grow-worlds-largest-diamond-crystal-in-breakthrough-that-could-stop-ai-chips-overheating.html",
     "https://www.anthropic.com/claude/fable",
     "https://blog.google/innovation-and-ai/models-and-research/gemini-models/introducing-gemini-4-hydrogen/",
-    "https://techcrunch.com/2026/11/13/nvidia-ceo-jensen-huangs-affair-with-alleged-chinese-spy-a-timeline/"
+    "https://techcrunch.com/2026/11/13/nvidia-ceo-jensen-huangs-affair-with-alleged-chinese-spy-a-timeline/",
+    "https://www.crissyfield.de/research/lovable-en/"
   ],
   "posts": [
     {
@@ -48,6 +49,12 @@
       "headline": "The unfolding Jensen Huang scandal: a timeline",
       "ig_post_id": "6af7c7b74b28296eb12ce457",
       "posted_at": "2026-11-14T02:30:15.455492+00:00"
+    },
+    {
+      "url": "https://www.crissyfield.de/research/lovable-en/",
+      "headline": "Lovable apps expose passport details and more than 200K private messages",
+      "ig_post_id": "6af9112ee5a113497abd98ec",
+      "posted_at": "2026-11-15T01:55:58.510101+00:00"
     }
   ],
   "img_urls": [
@@ -106,7 +113,17 @@
     "https://pixabay.com/photos/technology-network-storage-industry-8118382/",
     "https://pixabay.com/photos/computer-part-circuit-board-7136373/",
     "https://pixabay.com/photos/newspaper-magnifying-glass-magnifier-3844071/",
-    "https://pixabay.com/photos/iphone-hand-phone-mobile-phone-5537230/"
+    "https://pixabay.com/photos/iphone-hand-phone-mobile-phone-5537230/",
+    "https://pixabay.com/photos/business-businessman-colleagues-3948314/",
+    "https://www.crissyfield.de/images/research-lovable-opengraph.jpg",
+    "https://pixabay.com/photos/coding-programming-css-1853305/",
+    "https://pixabay.com/photos/chart-graph-finance-financial-data-2779132/",
+    "https://pixabay.com/photos/entrepreneur-startup-start-up-man-593378/",
+    "https://pixabay.com/photos/singapore-singapore-river-skyline-430643/",
+    "https://pixabay.com/photos/star-trails-astronomy-wallpaper-2234343/",
+    "https://pixabay.com/photos/warning-sign-construction-site-sign-4240442/",
+    "https://pixabay.com/photos/contract-business-document-sign-945619/",
+    "https://pixabay.com/photos/teamwork-cooperation-brainstorming-3213924/"
   ],
   "angle_history": [
     "NUMBERS",
@@ -119,7 +136,8 @@
     "AGAINST THE GRAIN",
     "UNCOMMON / WEIRD",
     "TRENDING",
-    "CONTROVERSIAL"
+    "CONTROVERSIAL",
+    "NUMBERS"
   ],
   "topic_history": [
     {
@@ -165,6 +183,10 @@
     {
       "headline": "The unfolding Jensen Huang scandal: a timeline",
       "date": "2026-11-14T02:30:15.455476+00:00"
+    },
+    {
+      "headline": "Lovable apps expose passport details and more than 200K private messages",
+      "date": "2026-11-15T01:55:58.510086+00:00"
     }
   ]
 }
