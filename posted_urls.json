@@ -11,7 +11,8 @@
     "https://www.anthropic.com/claude/fable",
     "https://blog.google/innovation-and-ai/models-and-research/gemini-models/introducing-gemini-4-hydrogen/",
     "https://techcrunch.com/2026/11/13/nvidia-ceo-jensen-huangs-affair-with-alleged-chinese-spy-a-timeline/",
-    "https://www.crissyfield.de/research/lovable-en/"
+    "https://www.crissyfield.de/research/lovable-en/",
+    "https://jakub.jankiewicz.org/blog/ai-code-open-source/"
   ],
   "posts": [
     {
@@ -55,6 +56,12 @@
       "headline": "Lovable apps expose passport details and more than 200K private messages",
       "ig_post_id": "6af9112ee5a113497abd98ec",
       "posted_at": "2026-11-15T01:55:58.510101+00:00"
+    },
+    {
+      "url": "https://jakub.jankiewicz.org/blog/ai-code-open-source/",
+      "headline": "All AI-generated code should be Open Source",
+      "ig_post_id": "6afa64968e87c256a3a6f982",
+      "posted_at": "2026-11-16T02:04:06.455452+00:00"
     }
   ],
   "img_urls": [
@@ -123,7 +130,17 @@
     "https://pixabay.com/photos/star-trails-astronomy-wallpaper-2234343/",
     "https://pixabay.com/photos/warning-sign-construction-site-sign-4240442/",
     "https://pixabay.com/photos/contract-business-document-sign-945619/",
-    "https://pixabay.com/photos/teamwork-cooperation-brainstorming-3213924/"
+    "https://pixabay.com/photos/teamwork-cooperation-brainstorming-3213924/",
+    "https://pixabay.com/photos/privacy-policy-keyboard-security-510728/",
+    "https://pixabay.com/photos/man-speech-speaker-male-boy-1405712/",
+    "https://pixabay.com/photos/singapore-river-skyline-building-2717931/",
+    "https://pixabay.com/photos/cotton-top-tamarin-monkey-primate-7369561/",
+    "https://jakub.jankiewicz.org/img/en/ai-code-open-source.png",
+    "https://pixabay.com/photos/teamwork-meeting-office-leadership-10545099/",
+    "https://pixabay.com/photos/code-html-digital-coding-web-1076536/",
+    "https://pixabay.com/photos/manhattan-monitor-binary-3866140/",
+    "https://pixabay.com/photos/code-programming-hacking-html-web-820275/",
+    "https://pixabay.com/photos/old-computer-8bit-technology-retro-4962269/"
   ],
   "angle_history": [
     "NUMBERS",
@@ -137,7 +154,8 @@
     "UNCOMMON / WEIRD",
     "TRENDING",
     "CONTROVERSIAL",
-    "NUMBERS"
+    "NUMBERS",
+    "AGAINST THE GRAIN"
   ],
   "topic_history": [
     {
@@ -187,6 +205,10 @@
     {
       "headline": "Lovable apps expose passport details and more than 200K private messages",
       "date": "2026-11-15T01:55:58.510086+00:00"
+    },
+    {
+      "headline": "All AI-generated code should be Open Source",
+      "date": "2026-11-16T02:04:06.455434+00:00"
     }
   ]
 }
