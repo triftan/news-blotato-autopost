@@ -12,7 +12,8 @@
     "https://blog.google/innovation-and-ai/models-and-research/gemini-models/introducing-gemini-4-hydrogen/",
     "https://techcrunch.com/2026/11/13/nvidia-ceo-jensen-huangs-affair-with-alleged-chinese-spy-a-timeline/",
     "https://www.crissyfield.de/research/lovable-en/",
-    "https://jakub.jankiewicz.org/blog/ai-code-open-source/"
+    "https://jakub.jankiewicz.org/blog/ai-code-open-source/",
+    "https://www.proactiveinvestors.com/companies/news/1101875/small-caps-watch-bcal-advances-cancer-diagnostics-ion-delivers-ai-breakthrough-and-technologyone-posts-record-profit-1101875.html"
   ],
   "posts": [
     {
@@ -62,6 +63,12 @@
       "headline": "All AI-generated code should be Open Source",
       "ig_post_id": "6afa64968e87c256a3a6f982",
       "posted_at": "2026-11-16T02:04:06.455452+00:00"
+    },
+    {
+      "url": "https://www.proactiveinvestors.com/companies/news/1101875/small-caps-watch-bcal-advances-cancer-diagnostics-ion-delivers-ai-breakthrough-and-technologyone-posts-record-profit-1101875.html",
+      "headline": "Small Caps Watch: BCAL advances cancer diagnostics, ION delivers AI breakthrough",
+      "ig_post_id": "6afbd8ea4b26315855bf4ef6",
+      "posted_at": "2026-11-17T04:32:42.474329+00:00"
     }
   ],
   "img_urls": [
@@ -140,7 +147,17 @@
     "https://pixabay.com/photos/code-html-digital-coding-web-1076536/",
     "https://pixabay.com/photos/manhattan-monitor-binary-3866140/",
     "https://pixabay.com/photos/code-programming-hacking-html-web-820275/",
-    "https://pixabay.com/photos/old-computer-8bit-technology-retro-4962269/"
+    "https://pixabay.com/photos/old-computer-8bit-technology-retro-4962269/",
+    "https://pixabay.com/photos/business-stock-finance-market-1730089/",
+    "https://pixabay.com/photos/man-drinking-whiskey-brandy-liquor-8575459/",
+    "https://pixabay.com/photos/trading-stocks-stock-market-finance-7626924/",
+    "https://pixabay.com/photos/eiffel-tower-paris-sightseeing-3862939/",
+    "https://cdn.proactiveinvestors.com/eyJidWNrZXQiOiJwYS1jZG4iLCJrZXkiOiJ1cGxvYWRcL05ld3NcL0ltYWdlXC8yMDI2XzExXC8yMDI2LTExLTE3LTEwLTIwLTA5LTc2ZWY1MTgwMDZjYWVjY2RlYzkyMGQyMTI1YzZiMDRjLmpwZyIsImVkaXRzIjp7InJlc2l6ZSI6eyJ3aWR0aCI6MTIwMCwiaGVpZ2h0Ijo2MzAsImZpdCI6ImNvdmVyIn19fQ==",
+    "https://pixabay.com/photos/man-staff-employee-glasses-head-8667962/",
+    "https://pixabay.com/photos/scientist-drugstore-microscope-2141259/",
+    "https://pixabay.com/photos/singapore-night-architecture-asia-1927719/",
+    "https://pixabay.com/photos/stock-iphone-business-mobile-phone-624712/",
+    "https://pixabay.com/photos/stock-exchange-win-boom-businessman-3087396/"
   ],
   "angle_history": [
     "NUMBERS",
@@ -155,7 +172,8 @@
     "TRENDING",
     "CONTROVERSIAL",
     "NUMBERS",
-    "AGAINST THE GRAIN"
+    "AGAINST THE GRAIN",
+    "WELL KNOWN, LITTLE UNDERSTOOD"
   ],
   "topic_history": [
     {
@@ -209,6 +227,10 @@
     {
       "headline": "All AI-generated code should be Open Source",
       "date": "2026-11-16T02:04:06.455434+00:00"
+    },
+    {
+      "headline": "Small Caps Watch: BCAL advances cancer diagnostics, ION delivers AI breakthrough and TechnologyOne posts record profit",
+      "date": "2026-11-17T04:32:42.474310+00:00"
     }
   ]
 }
