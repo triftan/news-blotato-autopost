@@ -13,7 +13,8 @@
     "https://techcrunch.com/2026/11/13/nvidia-ceo-jensen-huangs-affair-with-alleged-chinese-spy-a-timeline/",
     "https://www.crissyfield.de/research/lovable-en/",
     "https://jakub.jankiewicz.org/blog/ai-code-open-source/",
-    "https://www.proactiveinvestors.com/companies/news/1101875/small-caps-watch-bcal-advances-cancer-diagnostics-ion-delivers-ai-breakthrough-and-technologyone-posts-record-profit-1101875.html"
+    "https://www.proactiveinvestors.com/companies/news/1101875/small-caps-watch-bcal-advances-cancer-diagnostics-ion-delivers-ai-breakthrough-and-technologyone-posts-record-profit-1101875.html",
+    "https://winbuzzer.com/2026/11/17/facing-singapore-police-probe-nvidia-buyer-megaspeed-says-ex-ceo-left-in-2025-xcxwbn/"
   ],
   "posts": [
     {
@@ -69,6 +70,12 @@
       "headline": "Small Caps Watch: BCAL advances cancer diagnostics, ION delivers AI breakthrough",
       "ig_post_id": "6afbd8ea4b26315855bf4ef6",
       "posted_at": "2026-11-17T04:32:42.474329+00:00"
+    },
+    {
+      "url": "https://winbuzzer.com/2026/11/17/facing-singapore-police-probe-nvidia-buyer-megaspeed-says-ex-ceo-left-in-2025-xcxwbn/",
+      "headline": "Facing Singapore Police Probe, Nvidia Buyer Megaspeed Says Ex-CEO Left in 2025",
+      "ig_post_id": "6afd1f9f93fa11d37d045e1f",
+      "posted_at": "2026-11-18T03:46:39.712837+00:00"
     }
   ],
   "img_urls": [
@@ -157,7 +164,17 @@
     "https://pixabay.com/photos/scientist-drugstore-microscope-2141259/",
     "https://pixabay.com/photos/singapore-night-architecture-asia-1927719/",
     "https://pixabay.com/photos/stock-iphone-business-mobile-phone-624712/",
-    "https://pixabay.com/photos/stock-exchange-win-boom-businessman-3087396/"
+    "https://pixabay.com/photos/stock-exchange-win-boom-businessman-3087396/",
+    "https://winbuzzer.com/wp-content/uploads/2026/11/MegaspeedAI.webp",
+    "https://pixabay.com/photos/stairs-building-businessmen-6133971/",
+    "https://pixabay.com/photos/papers-projects-documents-3819540/",
+    "https://pixabay.com/photos/business-chart-graph-graphic-5475664/",
+    "https://pixabay.com/photos/leather-wallet-business-cards-visa-3080553/",
+    "https://pixabay.com/photos/apple-earnings-tablet-chart-6498050/",
+    "https://pixabay.com/photos/river-bridges-buildings-structures-6175173/",
+    "https://pixabay.com/photos/calculator-calculation-insurance-1044172/",
+    "https://pixabay.com/photos/marina-bay-of-singapore-2714866/",
+    "https://pixabay.com/photos/right-advocacy-lex-attorney-jura-4703922/"
   ],
   "angle_history": [
     "NUMBERS",
@@ -173,7 +190,8 @@
     "CONTROVERSIAL",
     "NUMBERS",
     "AGAINST THE GRAIN",
-    "WELL KNOWN, LITTLE UNDERSTOOD"
+    "WELL KNOWN, LITTLE UNDERSTOOD",
+    "CONTROVERSIAL"
   ],
   "topic_history": [
     {
@@ -231,6 +249,10 @@
     {
       "headline": "Small Caps Watch: BCAL advances cancer diagnostics, ION delivers AI breakthrough and TechnologyOne posts record profit",
       "date": "2026-11-17T04:32:42.474310+00:00"
+    },
+    {
+      "headline": "Facing Singapore Police Probe, Nvidia Buyer Megaspeed Says Ex-CEO Left in 2025",
+      "date": "2026-11-18T03:46:39.712823+00:00"
     }
   ]
 }
