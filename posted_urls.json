@@ -14,7 +14,8 @@
     "https://www.crissyfield.de/research/lovable-en/",
     "https://jakub.jankiewicz.org/blog/ai-code-open-source/",
     "https://www.proactiveinvestors.com/companies/news/1101875/small-caps-watch-bcal-advances-cancer-diagnostics-ion-delivers-ai-breakthrough-and-technologyone-posts-record-profit-1101875.html",
-    "https://winbuzzer.com/2026/11/17/facing-singapore-police-probe-nvidia-buyer-megaspeed-says-ex-ceo-left-in-2025-xcxwbn/"
+    "https://winbuzzer.com/2026/11/17/facing-singapore-police-probe-nvidia-buyer-megaspeed-says-ex-ceo-left-in-2025-xcxwbn/",
+    "https://www.tradingview.com/news/gurufocus:908cc1f2d094b:0-supermicro-unveils-major-ai-technology-breakthrough-with-amd-chips/"
   ],
   "posts": [
     {
@@ -76,6 +77,12 @@
       "headline": "Facing Singapore Police Probe, Nvidia Buyer Megaspeed Says Ex-CEO Left in 2025",
       "ig_post_id": "6afd1f9f93fa11d37d045e1f",
       "posted_at": "2026-11-18T03:46:39.712837+00:00"
+    },
+    {
+      "url": "https://www.tradingview.com/news/gurufocus:908cc1f2d094b:0-supermicro-unveils-major-ai-technology-breakthrough-with-amd-chips/",
+      "headline": "Supermicro Unveils Major AI Technology Breakthrough With AMD Chips",
+      "ig_post_id": "6afe6c65f6b6aa0cd49a9579",
+      "posted_at": "2026-11-19T03:26:29.268180+00:00"
     }
   ],
   "img_urls": [
@@ -174,7 +181,17 @@
     "https://pixabay.com/photos/river-bridges-buildings-structures-6175173/",
     "https://pixabay.com/photos/calculator-calculation-insurance-1044172/",
     "https://pixabay.com/photos/marina-bay-of-singapore-2714866/",
-    "https://pixabay.com/photos/right-advocacy-lex-attorney-jura-4703922/"
+    "https://pixabay.com/photos/right-advocacy-lex-attorney-jura-4703922/",
+    "https://pixabay.com/photos/electrician-electronics-computer-1288717/",
+    "https://s.tradingview.com/static/images/illustrations/news-story.jpg",
+    "https://pixabay.com/photos/hard-drive-detail-reading-head-656128/",
+    "https://pixabay.com/photos/singapore-skyscrapers-city-1990959/",
+    "https://pixabay.com/photos/connection-cable-country-cable-red-5033077/",
+    "https://pixabay.com/photos/job-office-team-business-internet-5382501/",
+    "https://pixabay.com/photos/pedestrian-bridge-walkway-night-8844110/",
+    "https://pixabay.com/photos/box-corrugated-packaging-carton-2098116/",
+    "https://pixabay.com/photos/network-connection-pc-web-address-197303/",
+    "https://pixabay.com/photos/startup-meeting-brainstorming-594090/"
   ],
   "angle_history": [
     "NUMBERS",
@@ -191,7 +208,8 @@
     "NUMBERS",
     "AGAINST THE GRAIN",
     "WELL KNOWN, LITTLE UNDERSTOOD",
-    "CONTROVERSIAL"
+    "CONTROVERSIAL",
+    "NUMBERS"
   ],
   "topic_history": [
     {
@@ -253,6 +271,10 @@
     {
       "headline": "Facing Singapore Police Probe, Nvidia Buyer Megaspeed Says Ex-CEO Left in 2025",
       "date": "2026-11-18T03:46:39.712823+00:00"
+    },
+    {
+      "headline": "Supermicro Unveils Major AI Technology Breakthrough With AMD Chips",
+      "date": "2026-11-19T03:26:29.268166+00:00"
     }
   ]
 }
